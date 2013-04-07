@@ -1,0 +1,2 @@
+from .saxsprofiles import saxsprofiles_app
+from .SAXSProfilesNamespace import SAXSProfilesNamespace
