@@ -95,9 +95,7 @@ class WellPlateNamespace(BaseNamespace):
         result += caput(scanPV+'P4EP', len(positions))
         result += caput(scanPV+'R4PV', basePV + 'fileIndex1')
         result += caput(scanPV+'P4PV', basePV + 'fileIndex1')
-        result += caput(basePV+'fileIndex2',1)
-        result += caput(basePV+'fileIndex3',1)
-        if result != 9 :
+        if result != 7 :
             print "Something wrong setting some PVs. Continuing anyway."
             
         # Setup detectors

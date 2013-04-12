@@ -19,18 +19,15 @@ def well():
     return render_template('wellplates.html',wells=wellIDs,epn='Norwood_5374A',plate='')
 
 @wellPlate_app.route("/<epn>/<plate>")
-@vbl.requires_auth
 def well1(epn,plate):
     return render_template('wellplates.html',wells=wellIDs,epn=epn,plate=plate,rel='../')
 
 @wellPlate_app.route("/qrcode/<epn>/<plate>")
-@vbl.requires_auth
 def serve_img(epn,plate):
     img = qrcode.make('http://10.6.0.65/' + epn + '/' + plate)
     return serve_pil_image(img)
 
 @wellPlate_app.route("/qrcode")
-@vbl.requires_auth
 def serve_img_empty():
     print 'qrcode'
     img = qrcode.make('This is not the code you are looking for.')

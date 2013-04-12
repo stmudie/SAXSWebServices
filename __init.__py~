@@ -30,7 +30,7 @@ app.register_blueprint(pipelinereport_app, url_prefix='/pipelinereport')
 def run_socketio(path):
     print 'email'
     print vbl.current_user['email']
-    attributes = { 'epn' : [vbl.current_user['email']]}
+    attributes = { 'epn' : ['default']}
     print path
     socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/pipelinereport':PipelineReportNamespace}, attributes)
     return ''
