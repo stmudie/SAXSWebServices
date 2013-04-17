@@ -9,15 +9,17 @@ from saxsprofiles import SAXSProfilesNamespace
 from pipelinereport import pipelinereport_app
 from pipelinereport import PipelineReportNamespace
 from reverse import ReverseProxied
-from vbl import vbl
+from plugins import vbl, beamline
+import config
 from RedisSession import RedisSessionInterface
 
 app = Flask(__name__)
+app.config.from_object(config)
+
 app.session_interface = RedisSessionInterface()
 vbl.init_app(app)
+beamline.init_app(app)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
-app.secret_key = 'PAWR#$asd%EH'
-app.debug = True
 
 app.register_blueprint(wellPlate_app, url_prefix='/wellplates')
 app.register_blueprint(saxsprofiles_app, url_prefix='/saxsprofiles')
@@ -26,11 +28,13 @@ app.register_blueprint(pipelinereport_app, url_prefix='/pipelinereport')
 #attributes = { 'epn': ['default_0001'], 'nicknames': [] }
 
 @app.route("/socket.io/<path:path>")
-@vbl.requires_auth
 def run_socketio(path):
-    print 'email'
-    print vbl.current_user['email']
-    attributes = { 'epn' : [vbl.current_user['email']]}
+    if vbl.current_user != None:
+        user = vbl.current_user['email']
+    else :
+        user = 'Default_123'
+    
+    attributes = { 'epn' : [user]}
     print path
     socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/pipelinereport':PipelineReportNamespace}, attributes)
     return ''

@@ -1,0 +1,6 @@
+SECRET_KEY = 'PAWR#$asd%EH'
+DEBUG = True
+
+BEAMLINE_NETWORKS = {
+    "SAXS":"10.138.0.0/16"
+}
