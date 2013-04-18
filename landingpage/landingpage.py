@@ -6,4 +6,8 @@ landingpage_app = Blueprint('landingpage', __name__,template_folder='templates',
 @landingpage_app.route("/")
 @beamline_or_vbl
 def report():
-    return render_template("landingpage.html")
+    if vbl.current_user != None:
+        user = vbl.current_user['email']
+    else :
+        user = ''
+    return render_template("landingpage.html",user=user)
