@@ -16,7 +16,7 @@ def serve_pil_image(pil_img):
 @wellPlate_app.route("/")
 @beamline_or_vbl
 def well():
-    return render_template('wellplates.html',wells=wellIDs,epn='Norwood_5374A',plate='')
+    return render_template('wellplates.html',wells=wellIDs,epn='',plate='')
 
 @wellPlate_app.route("/<epn>/<plate>")
 @beamline_or_vbl

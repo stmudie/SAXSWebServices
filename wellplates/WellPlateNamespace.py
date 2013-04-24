@@ -25,6 +25,8 @@ class WellPlateNamespace(BaseNamespace):
         r.sadd('well:epn', epn)
         r.sadd('well:' + epn + ':plates', data['platename'])
         r.set('well:' + epn + ':plate:' + data['platename'], pickle.dumps(data))
+        plates = list(r.smembers('well:' + self.request['epn'][0] + ':plates'))
+        self.emit('loadlist',plates)
  
     def on_load(self, epn, plate):
         data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
