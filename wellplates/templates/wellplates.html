@@ -324,7 +324,11 @@
 			$(".removeSelect").removeClass('ui-selectee');
 			
 			
-			
+			$(" .sampleName").change(function(ev){
+				parsedName = $(ev.target).val().replace(/\./g,'p');
+				parsedName = parsedName.replace(/\ /g,'_');
+				$(ev.target).val(parsedName);
+			});
 			//$( "#sortable, #sortableHead, #sortableRowNames" ).disableSelection();
 			
 			$( ".sampleType").change(function(ev){	
@@ -529,6 +533,7 @@
 				sampleNames = [];
 				sampleType = [];
 				sampleConc = [];
+				$("#save").focus();
 				$(".sampleName").each(function(index){
 					sampleNames.push($(this).val());
 				});
