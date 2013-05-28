@@ -39,12 +39,14 @@ class WellPlateNamespace(BaseNamespace):
             positions = [1+int(order) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+            concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
         
         elif type == 'selected':
             sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             positions = [1+int(order) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
+            concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
     
         sampleNameString = "".join(sampleNames)
         sampleNameLen = [len(name) for name in sampleNames]
@@ -55,12 +57,12 @@ class WellPlateNamespace(BaseNamespace):
     
         print len(sampleNameCoord)
 
-        basePV = "SR13ID01HU02IOC02:"
+        indexPV = "13INDEXARRAY:array"
 
         # Setup global scan record parameters
-        scanPV = basePV + 'scan1.'
+        scanPV = 'SR13ID01HU02IOC02:scan1.'
         result = 0
-        result += caput(basePV + 'fileIndex1',1)
+        result += caput(basePV + ':arrayIndex1',0)
         result += caput(scanPV+'CMND',6)
         result += caput(scanPV+'BSPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
         result += caput(scanPV+'BSCD',0)
@@ -78,7 +80,6 @@ class WellPlateNamespace(BaseNamespace):
         dictKey = ['COORD','WASH','TYPE']
         data = {'COORD': positions, 'WASH': washes, 'TYPE': types}
         for posNum in range(3):
-            scanPV = basePV + 'scan1.'
             result += caput(scanPV+'R'+str(1+posNum)+'PV', positioner[posNum])
             result += caput(scanPV+'P'+str(1+posNum)+'PV', positioner[posNum])
             result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
@@ -88,20 +89,22 @@ class WellPlateNamespace(BaseNamespace):
         if result != 13 :
             print "Something wrong setting " + str(13-result) + " some PVs. Continuing anyway."
     
-        # Setup sample name positioners
+        # Setup sample name and concentration positioners
         result = 0
-        result += caput(basePV+'fileNames', str(sampleNameString))
-        result += caput(basePV+'fileIndices', sampleNameCoord)
+        result += caput(basePV+'1:arrayValues', str(sampleNameString))
+        result += caput(basePV+'1:arrayIndices', sampleNameCoord)
+        result += caput(basePV+'2:arrayValues', concentration)
+        result += caput(basePV+'2:arrayIndices', range(len(positions))
         result += caput(scanPV+'P4SM', 0)
         result += caput(scanPV+'P4SP', 1)
         result += caput(scanPV+'P4EP', len(positions))
         result += caput(scanPV+'R4PV', basePV + 'fileIndex1')
         result += caput(scanPV+'P4PV', basePV + 'fileIndex1')
-        result += caput(basePV+'fileIndex2',1)
-        result += caput(basePV+'fileIndex3',1)
-        if result != 9 :
+        result += caput(basePV+':arrayIndex2',0)
+        result += caput(basePV+':arrayIndex3',0)
+        if result != 11 :
             print "Something wrong setting some PVs. Continuing anyway."
-            
+ 
         # Setup detectors
         result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
         if result != 1 :
