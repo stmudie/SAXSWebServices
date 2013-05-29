@@ -62,7 +62,7 @@ class WellPlateNamespace(BaseNamespace):
         # Setup global scan record parameters
         scanPV = 'SR13ID01HU02IOC02:scan1.'
         result = 0
-        result += caput(basePV + ':arrayIndex1',0)
+        result += caput(indexPV + ':arrayIndex1',0)
         result += caput(scanPV+'CMND',6)
         result += caput(scanPV+'BSPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
         result += caput(scanPV+'BSCD',0)
@@ -87,21 +87,21 @@ class WellPlateNamespace(BaseNamespace):
             result += caput(scanPV+'P'+str(1+posNum)+'PA', data[dictKey[posNum]])
             result += caput(scanPV+'NPTS', len(positions))
         if result != 13 :
-            print "Something wrong setting " + str(13-result) + " some PVs. Continuing anyway."
+            print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
     
         # Setup sample name and concentration positioners
         result = 0
-        result += caput(basePV+'1:arrayValues', str(sampleNameString))
-        result += caput(basePV+'1:arrayIndices', sampleNameCoord)
-        result += caput(basePV+'2:arrayValues', concentration)
-        result += caput(basePV+'2:arrayIndices', range(len(positions))
+        result += caput(indexPV+'1:arrayValues', str(sampleNameString))
+        result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
+        result += caput(indexPV+'2:arrayValues', concentration)
+        result += caput(indexPV+'2:arrayIndices', range(len(positions)))
         result += caput(scanPV+'P4SM', 0)
-        result += caput(scanPV+'P4SP', 1)
-        result += caput(scanPV+'P4EP', len(positions))
-        result += caput(scanPV+'R4PV', basePV + 'fileIndex1')
-        result += caput(scanPV+'P4PV', basePV + 'fileIndex1')
-        result += caput(basePV+':arrayIndex2',0)
-        result += caput(basePV+':arrayIndex3',0)
+        result += caput(scanPV+'P4SP', 0)
+        result += caput(scanPV+'P4EP', len(positions)-1)
+        result += caput(scanPV+'R4PV', indexPV + ':arrayIndex1')
+        result += caput(scanPV+'P4PV', indexPV + ':arrayIndex1')
+        result += caput(indexPV+':arrayIndex2',0)
+        result += caput(indexPV+':arrayIndex3',0)
         if result != 11 :
             print "Something wrong setting some PVs. Continuing anyway."
  
@@ -110,7 +110,7 @@ class WellPlateNamespace(BaseNamespace):
         if result != 1 :
             print "Something wrong setting some PVs. Continuing anyway."
         
-        scanning = caput(basePV+'scan1.EXSC', 1)
+        scanning = caput(scanPV+'EXSC', 1)
         
     def on_runall(self,epn,plate):
         self.run(epn, plate, type = 'all')
