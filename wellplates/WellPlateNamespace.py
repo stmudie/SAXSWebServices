@@ -29,7 +29,13 @@ class WellPlateNamespace(BaseNamespace):
         self.emit('loadlist',plates)
  
     def on_load(self, epn, plate):
-        data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
+        print 'on load'
+        redisData = r.get('well:' + epn + ':plate:' + plate)
+        if redisData != None:
+            data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
+        else :
+            data = ''
+        
         self.emit('platedata', epn, plate, data)
 
     def run(self,epn,plate,type='all'):

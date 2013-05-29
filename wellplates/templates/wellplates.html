@@ -48,8 +48,9 @@
 	#sortable li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px;  text-align: center; border-radius: 10px;}
 	
 	.sampleName {display:block; margin-top:10px; margin-left: 5px; width:82px;}
-	.sampleConc {display:block; margin-top: 0px; margin-left: 5px; width:82px;}
-
+	.sampleConc {display:inline-block; margin-top: 0px; margin-left: 5px; margin-right: 0px; width:37px;}
+	.sampleMW{display:inline-block; margin-top: 0px; margin-left: 0px; margin-right: 8px; width:37px;}
+	
 	.ui-icon.white { background-image: url("{{ url_for('wellPlate.static', filename='jquery/ui/css/images/ui-icons_ffffff_256x240.png')}}"); }
 
 	li .selecthandle { background: #ddddf5; position: relative; left: 0; top: 0; bottom: 0; padding:0px; }
@@ -71,11 +72,16 @@
 		});
 		
 		socket.on('epn', function(epn){
-			globalepn = epn;
-			$("#epnTitle").html('Current USER/EPN: ' + epn);
-			if (epn != undefined && '{{plate}}' != '')
-			{
-				socket.emit('load',epn,'{{plate}}');
+			if ('{{epn}}' != '' && '{{epn}}' != epn) {
+				socket.emit('changeepn','{{epn}}')
+			} else {
+				globalepn = epn;
+				$("#epnTitle").html('Current USER/EPN: ' + globalepn);
+				if (epn != undefined && '{{plate}}' != '')
+				{
+					$("#platename").val('{{plate}}');
+					socket.emit('load',globalepn,'{{plate}}');
+				}
 			}
 		});
 		
@@ -268,6 +274,7 @@
 					well = alphabet[Math.floor(i/12)] + (i%12+1);
 					$("#sortOrderCell_"+i).text(well);
 				}
+
 			});
 			
 			$('.sampleName').focus(function() {
@@ -347,7 +354,7 @@
 			$( ".sampleConc").change(function(ev){	
 				if ($(ev.target).val() !='')
 				{
-					$(ev.target.parentNode).children(".sampleType").prop('selectedIndex',2).change();
+					$(ev.target.parentNode).children(".sampleType").prop('selectedIndex',3).change();
 					sampleColour($(ev.target.parentNode),ev.target.value);
 				};
 				
@@ -579,8 +586,8 @@
 
 <H1 id="epnTitle"></H1>
 <span id="topbar" class="ui-widget-header ui-corner-all">
-	<label for="userepn">Username_EPN</label>
-	<input id="userepn"></input>	
+	<!--<label for="userepn">Username_EPN</label>
+	<input id="userepn"></input>	-->
 	<label for="platename">Plate Name</label>
 	<input id="platename"></input>
 	<button id="save">Save</button>
@@ -588,7 +595,7 @@
 	<button id="StopTop">Stop</button>
 </span>	
 
-<a id="qrimagelink" href="qrcode"><img id="qrimage" src="qrcode" height=50px style="vertical-align: middle"></a>
+<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
 
 <div class="wellPlates" style="width:1550px">
 
@@ -640,16 +647,21 @@
 			{% for well in wells %}
 				<li id="{{ well }}" class="ui-state-default well">
 						<div class='selecthandle ui-corner-top'><span class='ui-icon ui-icon-circlesmall-plus'></span></div>
-						<input type='text' class=sampleName>
+						<input type='text' class=sampleName placeholder="sample name">
 						<!--<label for="spinner" size='10'>Select a value:</label> -->
-						<input id="{{ well}}_conc" class="sampleConc" style="margin-top: 0;" onkeypress="return isNumberKey(event,'{{ well}}_conc')">
+						
+							<input id="{{ well}}_conc" class="sampleConc" style="margin-top: 0;" placeholder="conc" onkeypress="return isNumberKey(event,'{{ well}}_conc')">
+							<input id="{{ well}}_mw" class="sampleMW" style="margin-top: 0;" placeholder="MW" onkeypress="return isNumberKey(event,'{{ well}}_mw')">
+						
 						<select id="{{ well }}_sampleType" class="sampleType">
+								<option disabled selected value = "-1">Type</option>
 								<option value = "-1">None</option>
-                                <option value = "0">Buffer</option>
+								<option value = "0">Buffer</option>
 								<option value = "1">Sample</option>
 								<option value = "2">Repeat Buffer</option>
 						</select>
 						<select class="washType">
+								<option disabled selected value = "0">Wash Type</option>
 								<option value = "0">None</option>
 								<option value = "1">Water</option>
 								<option value = "2">Protein Killer</option>
