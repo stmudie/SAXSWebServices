@@ -66,11 +66,16 @@
 		var socket = io.connect('/wellplates');
 		var globalepn;
 		var globalplate;
-				
+		//var alive = true;
+		
 		socket.on('connect', function(){
 			socket.emit('connect')
 		});
-		
+	
+                socket.on('disconnect', function(){
+		    alert('Server has died. Refresh browser.');
+		});
+
 		socket.on('epn', function(epn){
 			if ('{{epn}}' != '' && '{{epn}}' != epn) {
 				socket.emit('changeepn','{{epn}}')
