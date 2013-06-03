@@ -84,9 +84,9 @@ class WellPlateNamespace(BaseNamespace):
             result += caput(scanPV+'P'+str(1+posNum)+'PV', positioner[posNum])
             result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
             time.sleep(0.1)
-            result += caput(scanPV+'P'+str(1+posNum)+'PA', data[dictKey[posNum]])
+            result += caput(scanPV+'P'+str(1+posNum)+'PA',data[dictKey[posNum]])
             result += caput(scanPV+'NPTS', len(positions))
-        if result != 13 :
+        if result != 15 :
             print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
     
         # Setup sample name and concentration positioners
