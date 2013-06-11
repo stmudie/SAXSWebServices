@@ -215,7 +215,12 @@
 				sampleNames.push($(this).val());
 			});
 			$(".sampleConc").each(function(index){
-				sampleConc.push($(this).val());
+				if ($(this).val() == ''){
+                                      conc = 1;
+                                } else {
+                                      conc = $(this).val();
+                                }
+                                sampleConc.push(conc);
 			});
 			$(".sampleType").each(function(index){
 				sampleType.push($(this).val());
