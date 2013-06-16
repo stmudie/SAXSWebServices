@@ -115,6 +115,10 @@
 				$(this).val(data.sampleConc[index]).change();
 				//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
 			});
+			$(".sampleMW").each(function(index){
+				$(this).val(data.sampleMW[index]).change();
+				//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
+			});
 			$(".washType").each(function(index){
 				$(this).val(data.washType[index]).change();
 			});
@@ -139,6 +143,15 @@
 				$('#'+id).css("background","rgb(255,0,0)");
 				setTimeout(function(){$('#'+id).css("background","rgb(255,255,255)")},200);
 				return false;
+			} else if (charCode == 46) {
+				if ($.inArray('.',$('#'+id).val()) == -1 ) {
+					return true;	
+				} else {
+					$('#'+id).css("background","rgb(255,0,0)");
+					setTimeout(function(){$('#'+id).css("background","rgb(255,255,255)")},200);
+					return false;
+				}
+				
 			} else {
 				return true;
 			}      
@@ -204,6 +217,7 @@
 			
 			var sampleNames = new Array();
 			var sampleConc = new Array();
+			var sampleMW = new Array();
 			var sampleType = new Array();
 			var washType = new Array();
 			var sampleOrder = new Array();
@@ -222,6 +236,14 @@
                                 }
                                 sampleConc.push(conc);
 			});
+			$(".sampleMW").each(function(index){
+				if ($(this).val() == ''){
+                                      MW = 1;
+                                } else {
+                                      MW = $(this).val();
+                                }
+                                sampleMW.push(MW);
+			});
 			$(".sampleType").each(function(index){
 				sampleType.push($(this).val());
 			});
@@ -239,6 +261,7 @@
 			data['platename'] = globalplate;
 			data['sampleNames'] = sampleNames;
 			data['sampleConc'] = sampleConc;
+			data['sampleMW'] = sampleMW;
 			data['sampleType'] = sampleType;
 			data['washType'] = washType;
 			data['sampleOrder'] = sampleOrder;
@@ -291,6 +314,9 @@
 				selectSelectable($(this).parent(),$("#sortable"));
 				});
 			$('.sampleConc').focus(function() {
+				selectSelectable($(this).parent(),$("#sortable"));
+				});
+			$('.sampleMW').focus(function() {
 				selectSelectable($(this).parent(),$("#sortable"));
 				});
 			$('.sampleType').focus(function() {
@@ -354,10 +380,12 @@
 				{
 					
 					$(ev.target.parentNode).children(".sampleConc").val("").prop('disabled',true);
+					$(ev.target.parentNode).children(".sampleMW").val("").prop('disabled',true);
 				}
 				else
 				{
 					$(ev.target.parentNode).children(".sampleConc").prop('disabled',false);
+					$(ev.target.parentNode).children(".sampleMW").prop('disabled',false);
 				}
 				
 			});
@@ -366,6 +394,13 @@
 				{
 					$(ev.target.parentNode).children(".sampleType").prop('selectedIndex',3).change();
 					sampleColour($(ev.target.parentNode),ev.target.value);
+				};
+				
+			});
+			$( ".sampleMW").change(function(ev){	
+				if ($(ev.target).val() !='')
+				{
+					$(ev.target.parentNode).children(".sampleType").prop('selectedIndex',3).change();
 				};
 				
 			});
@@ -405,6 +440,7 @@
 					firstSelect = $(".well").filter(".ui-selected");
 					name = (firstSelect.children('.sampleName').val());
 					conc = (firstSelect.children('.sampleConc').val());
+					MW = (firstSelect.children('.sampleMW').val());
 					type = (firstSelect.children('.sampleType').val());
 					wash = (firstSelect.children('.washType').val());
 					wellNumber = firstSelect.index();
@@ -415,6 +451,7 @@
 						$(".sampleName").eq(i*12+columnNumber).val(name).change();
 						$(".sampleType").eq(i*12+columnNumber).val(type).change();
 						$(".sampleConc").eq(i*12+columnNumber).val(conc).change();
+						$(".sampleMW").eq(i*12+columnNumber).val(MW).change();
 						$(".washType").eq(i*12+columnNumber).val(wash).change();
 					}
 			});
@@ -423,6 +460,7 @@
 					firstSelect = $(".well").filter(".ui-selected");
 					name = (firstSelect.children('.sampleName').val());
 					conc = (firstSelect.children('.sampleConc').val());
+					MW = (firstSelect.children('.sampleMW').val());
 					type = (firstSelect.children('.sampleType').val());
 					wash = (firstSelect.children('.washType').val());
 					wellNumber = firstSelect.index();
@@ -438,6 +476,10 @@
 						$(this).val(conc);
 						sampleColour($(this.parentNode),$(this).val());
 					});
+					$(".sampleMW").slice(wellNumber+1,rowNumber*12+12).each(function(index){
+						$(this).val(MW);
+						sampleColour($(this.parentNode),$(this).val());
+					});
 					$(".washType").slice(wellNumber+1,rowNumber*12+12).each(function(index){
 						$(this).val(wash).change();
 					});
@@ -448,6 +490,7 @@
 					{
 						name = ($(".sampleName").eq(i).val());
 						conc = ($(".sampleConc").eq(i).val());
+						MW   = ($(".sampleMW").eq(i).val());
 						type = ($(".sampleType").eq(i).val());
 						wash = ($(".washType").eq(i).val());
 						for(j=1;j<8;j++)
@@ -455,6 +498,7 @@
 							$(".sampleName").eq(j*12+i).val(name).change();
 							$(".sampleType").eq(j*12+i).val(type).change();
 							$(".sampleConc").eq(j*12+i).val(conc).change();
+							$(".sampleMW").eq(j*12+i).val(MW).change();
 							$(".washType").eq(j*12+i).val(wash).change();
 						}
 					}
@@ -465,6 +509,7 @@
 					{
 						name = ($(".sampleName").eq(i*12).val());
 						conc = ($(".sampleConc").eq(i*12).val());
+						MW = ($(".sampleMW").eq(i*12).val());
 						type = ($(".sampleType").eq(i*12).val());
 						wash = ($(".washType").eq(i*12).val());
 						$(".sampleName").slice(i*12+1,(i+1)*12).each(function(index){
@@ -476,6 +521,9 @@
 						$(".sampleConc").slice(i*12+1,(i+1)*12).each(function(index){
 							$(this).val(conc).change();
 						});
+						$(".sampleMW").slice(i*12+1,(i+1)*12).each(function(index){
+							$(this).val(MW).change();
+						});
 						$(".washType").slice(i*12+1,(i+1)*12).each(function(index){
 							$(this).val(wash).change();
 						});
@@ -485,6 +533,7 @@
 				.click(function(){
 					name = ($(".sampleName").val());
 					conc = ($(".sampleConc").val());
+					MW = ($(".sampleMW").val());
 					type = ($(".sampleType").val());
 					wash = ($(".washType").val());
 					console.log(wash);
@@ -497,6 +546,9 @@
 					});
 					$(".sampleConc").each(function(index){
 						$(this).val(conc).change();						
+					});
+					$(".sampleMW").each(function(index){
+						$(this).val(MW).change();						
 					});
 					$(".washType").each(function(index){
 						$(this).val(wash).change();
@@ -511,6 +563,9 @@
 					$(".sampleConc").each(function(index){
 						$(this).val('').change();
 					});
+					$(".sampleMW").each(function(index){
+						$(this).val('').change();
+					});
 					$(".sampleType").each(function(index){
 						$(this).val('').change();
 					});
@@ -522,6 +577,7 @@
 				.click(function(){
 					name = ($(".well").filter(".ui-selected").children('.sampleName').val());
 					conc = ($(".well").filter(".ui-selected").children('.sampleConc').val());
+					MW = ($(".well").filter(".ui-selected").children('.sampleMW').val());
 					type = ($(".well").filter(".ui-selected").children('.sampleType').val());
 					wash = ($(".well").filter(".ui-selected").children('.washType').val());
 										
@@ -533,6 +589,9 @@
 					});
 					$(".well").filter(".ui-selected").children('.sampleConc').each(function(index){
 						$(this).val(conc).change();
+					});
+					$(".well").filter(".ui-selected").children('.sampleMW').each(function(index){
+						$(this).val(MW).change();
 					});
 					$(".well").filter(".ui-selected").children('.washType').each(function(index){
 						$(this).val(wash).change();
@@ -688,7 +747,7 @@
 			<button id="runall" class="run-button">Run All</button>
 			<button id="runselected" class="run-button">Run Selected</button>
 			<button id="stop" class="stop-button">Stop</button>
-		<div>
+		</div>
 		
 		</br>
 		

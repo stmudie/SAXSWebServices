@@ -46,6 +46,8 @@ class WellPlateNamespace(BaseNamespace):
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+            molarWeight = [float(data['sampleMV'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+        
         
         elif type == 'selected':
             sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
@@ -53,6 +55,8 @@ class WellPlateNamespace(BaseNamespace):
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
+            molarWeight = [float(data['sampleMW'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+    
     
         sampleNameString = "".join(sampleNames)
         sampleNameLen = [len(name) for name in sampleNames]
@@ -95,12 +99,14 @@ class WellPlateNamespace(BaseNamespace):
         if result != 15 :
             print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
     
-        # Setup sample name and concentration positioners
+        # Setup sample name, concentration and molarWeight positioners
         result = 0
         result += caput(indexPV+'1:arrayValues', str(sampleNameString))
         result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
         result += caput(indexPV+'2:arrayValues', concentration)
         result += caput(indexPV+'2:arrayIndices', range(len(positions)))
+        result += caput(indexPV+'3:arrayValues', molarWeight)
+        result += caput(indexPV+'3:arrayIndices', range(len(positions)))
         result += caput(scanPV+'P4SM', 0)
         result += caput(scanPV+'P4SP', 0)
         result += caput(scanPV+'P4EP', len(positions)-1)

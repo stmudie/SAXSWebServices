@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>jQuery.event.drag with touch support</title>
+<script type="text/javascript" src="jquery.min.js"></script>
+<script type="text/javascript" src="jquery.event.drag.min.js"></script>
+<script type="text/javascript">
+$(function () {
+	$('#draggie').bind('drag', function (event) {
+		var $this = $(this);
+		$(this).css({
+			left: (event.pageX - 25) + 'px',
+			top: (event.pageY - 20) + 'px'
+		});
+	}).css({
+		position: 'absolute',
+		width: '50px',
+		height: '40px',
+		left: '10px',
+		top: '10px',
+		background: 'maroon',
+		color: '#f5f5f5',
+		'text-align': 'center',
+		cursor: 'default'
+	});
+});
+</script>
+</head>
+<body>
+
+<div id="draggie">Drag me!</div>
+
+</body>
+</html>

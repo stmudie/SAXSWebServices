@@ -1,0 +1,2 @@
+from .genericscan import genericscan_app
+from .GenericScanNamespace import GenericScanNamespace
