@@ -167,7 +167,9 @@
 					$(".ui-icon-arrow-4").removeClass("white");
 					break;
 				case "1":
-					target.css({background: "hsl(120,50%,50%)"});
+					conc = target.children(".sampleConc").val();
+					if (conc == '') {conc = 1};
+					sampleColour(target,conc);
 					$(".ui-icon-arrow-4").addClass("white");
 					break;
 				case "0":
@@ -229,7 +231,7 @@
 				sampleNames.push($(this).val());
 			});
 			$(".sampleConc").each(function(index){
-				if ($(this).val() == ''){
+				if ($(this).val() == '' && sampleNames[index] != ''){
                                       conc = 1;
                                 } else {
                                       conc = $(this).val();
@@ -237,7 +239,7 @@
                                 sampleConc.push(conc);
 			});
 			$(".sampleMW").each(function(index){
-				if ($(this).val() == ''){
+				if ($(this).val() == '' && sampleNames[index] != ''){
                                       MW = 1;
                                 } else {
                                       MW = $(this).val();

@@ -46,7 +46,7 @@ class WellPlateNamespace(BaseNamespace):
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
-            molarWeight = [float(data['sampleMV'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+            molarWeight = [float(data['sampleMW'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
         
         
         elif type == 'selected':
