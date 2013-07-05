@@ -19,7 +19,13 @@
 		<script src="{{ url_for('mdaplotter.static', filename='verticalCheckPlugin.js')}}"></script>
 		<script src="{{ url_for('mdaplotter.static', filename='highcharts/highcharts.js')}}"></script>
 		<script src="{{ url_for('mdaplotter.static', filename='highcharts/modules/exporting.js')}}"></script>
-
+<style>
+.ui-autocomplete {
+		max-height:900px;
+                overflow-y:auto;
+                overflow-x:hidden;
+}
+</style>
 <script type="text/javascript">
 			
 WEB_SOCKET_SWF_LOCATION = "{{ url_for('mdaplotter.static', filename='WebSocketMain.swf')}}";
@@ -167,7 +173,7 @@ $(function () {
 	raw_dat_chart = new Highcharts.Chart(rawDatSettings);
 	
 	$("#filelist").autocomplete({
-		minLength:0,
+                minLength:0,
 		select: function(event, ui){
 			socket.emit('filename',ui.item.value);
 			$(this).blur();
