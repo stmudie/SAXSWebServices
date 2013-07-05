@@ -34,9 +34,12 @@ class MDAPlotterNamespace(BaseNamespace):
             data = zip(*data)
             
             #Hard coded for reflectivity
-            omega = [float(o) for o in (data[0])[1:]]
-            counts = [float(c)/exp(0-53*0.0075*float((data[2])[i])) for i,c in enumerate((data[4][1:]),start=1)]
-            
+            try:
+                omega = [float(o) for o in (data[0])[1:]]
+                counts = [float(c)/exp(0-53*0.0075*float((data[2])[i])) for i,c in enumerate((data[6][1:]),start=1)]
+            except Exception:
+                continue
+
             profile = zip(*[omega,counts])
             print profile
             #print omega

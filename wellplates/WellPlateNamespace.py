@@ -38,7 +38,7 @@ class WellPlateNamespace(BaseNamespace):
         
         self.emit('platedata', epn, plate, data)
 
-    def run(self,epn,plate,type='all'):
+    def on_initialise(self,epn,plate,type='all'):
         data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
         if type == 'all':
             sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
@@ -122,13 +122,17 @@ class WellPlateNamespace(BaseNamespace):
         if result != 1 :
             print "Something wrong setting some PVs. Continuing anyway."
         
+    def run(self):
+        scanPV = 'SR13ID01HU02IOC02:scan1.'
         scanning = caput(scanPV+'EXSC', 1)
         
     def on_runall(self,epn,plate):
-        self.run(epn, plate, type = 'all')
+        self.on_initialise(epn, plate, type = 'all')
+	self.run()
 
     def on_runselected(self,epn,plate):
-        self.run(epn, plate, type = 'selected')
+        self.on_initialise(epn, plate, type = 'selected')
+        self.run()
 
     def recv_message(self, message):
         print "PING!!!", message

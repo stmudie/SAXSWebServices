@@ -416,6 +416,11 @@
 				socket.emit("load",globalepn,globalplate);
 			});
 			$("#run").click(function(){console.log( '{{test}}' )});
+			$("#initialise").button().click(function(){
+				if (savePlate() == 0){
+				socket.emit("initialise",globalepn, globalplate);
+				};
+			});
 			$("#runall").button().click(function(){
 				if (savePlate() == 0){
 				socket.emit("runall",globalepn, globalplate);
@@ -746,7 +751,8 @@
 	<div id="tabs-2" style="height:1500px">
 		
 		<div>
-			<button id="runall" class="run-button">Run All</button>
+			<button id="initialise" class="run-button">Initialise</button>
+                        <button id="runall" class="run-button">Run All</button>
 			<button id="runselected" class="run-button">Run Selected</button>
 			<button id="stop" class="stop-button">Stop</button>
 		</div>
