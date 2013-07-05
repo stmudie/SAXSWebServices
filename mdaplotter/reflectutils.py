@@ -54,17 +54,36 @@ def read_SAXSlogs(file, energy = 0, write = True, FWHM = 0.043, length = 200):
     #reduce synchrotron SAXS reflectivity
     
     with open(file) as f:
-        numcolumns = len(f.readline().split(','))
+        columnHeadersTemp = f.readline().split(',')
     
-    if numcolumns >= 9:
-        omega, attenuators, monitor, intensity, energylog    = np.loadtxt(file, delimiter = ',', skiprows = 1, usecols = (0, 2, 5, 6, 8), unpack = True)
-    elif numcolumns < 9 and numcolumns > 6:
-        omega, attenuators, monitor, intensity    = np.loadtxt(file, delimiter = ',', skiprows = 1, usecols = (0, 2, 5, 6), unpack = True)
-    else:
+    columnHeaders = [':'.join(header.split(':')[1:]) for header in columnHeadersTemp]
+    omegaPV = 'GSAX_OMG_MTR'
+    attenuatorPV = 'ATTENUATORS'
+    intensityPV = 'Stats1:Total_RBV'
+    monitorPV = 'scaler1.S3'
+    energyPV = 'KEV_MON'    
+    
+    PVs = [omegaPV,attenuatorPV,intensityPV,monitorPV,energyPV]
+    columnNumbers = []
+    for pv in PVs :
+        try:
+            colNum = columnHeaders.index(pv)
+        except Exception:
+            colNum = -1
+        columnNumbers.append(colNum)
+
+    print columnNumbers
+        
+    if min(columnNumbers[0:-2]) < 0:
         return
     
+    if columnNumbers[-1] >= 0:
+        omega, attenuators, intensity, monitor, energylog    = np.loadtxt(file, delimiter = ',', skiprows = 1, usecols = columnNumbers, unpack = True)
+    else:
+        omega, attenuators, intensity, monitor    = np.loadtxt(file, delimiter = ',', skiprows = 1, usecols = columnNumbers[0:-1], unpack = True)
+   
     if energy == 0:
-        if numcolumns >= 9:
+        if columnNumbers[-1] >= 0:
             energy = energylog[0]
         else:
             energy = 11
