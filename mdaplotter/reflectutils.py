@@ -54,7 +54,7 @@ def read_SAXSlogs(file, energy = 0, write = True, FWHM = 0.043, length = 200):
     #reduce synchrotron SAXS reflectivity
     
     with open(file) as f:
-        columnHeadersTemp = f.readline().split(',')
+        columnHeadersTemp = f.readline().strip().split(',')
     
     columnHeaders = [':'.join(header.split(':')[1:]) for header in columnHeadersTemp]
     omegaPV = 'GSAX_OMG_MTR'
@@ -72,8 +72,6 @@ def read_SAXSlogs(file, energy = 0, write = True, FWHM = 0.043, length = 200):
             colNum = -1
         columnNumbers.append(colNum)
 
-    print columnNumbers
-        
     if min(columnNumbers[0:-2]) < 0:
         return
     
