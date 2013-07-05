@@ -86,6 +86,14 @@ def read_SAXSlogs(file, energy = 0, write = True, FWHM = 0.043, length = 200):
         else:
             energy = 11
     
+    if min(intensity) == 0:
+        firstzeroindex = (np.where(intensity==0))[0][0]
+        omega = omega[0:firstzeroindex]
+        intensity = intensity[0:firstzeroindex]
+        attenuators = attenuators[0:firstzeroindex]
+        monitor = monitor[0:firstzeroindex]
+        
+    
     attenuatorList = np.unique(attenuators)
     
     wavelength = xraylam(energy)

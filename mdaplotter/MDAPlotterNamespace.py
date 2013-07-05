@@ -21,10 +21,11 @@ class MDAPlotterNamespace(BaseNamespace):
     
     def sendReflectProfile(self, filename):
         #Using Andy Nelson's code for reflectivity
-        try:
-            totalq, totali, totaldi = ref.read_SAXSlogs(filename,write=False)
-        except Exception:
-            return
+        #try:
+        totalq, totali, totaldi = ref.read_SAXSlogs(filename,write=False)
+        #except Exception:
+        # print 'exception'
+        #    return
 
         profile = [totalq,totali]
         profile = zip(*[totalq,totali])
