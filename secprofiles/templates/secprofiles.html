@@ -1,0 +1,322 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>SAXS Profiles</title>
+
+		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
+		<script type="text/javascript" src="{{ url_for('secprofiles.static', filename='socket.io.js')}}"></script>
+		<link rel="stylesheet" href="{{ url_for('secprofiles.static', filename='ui/css/jquery.ui.all.css')}}">
+		<script src="{{ url_for('secprofiles.static', filename='jquery-1.7.2.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.core.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.widget.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.mouse.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.button.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.sortable.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.tabs.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='verticalCheckPlugin.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='highcharts/highcharts.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='highcharts/modules/exporting.js')}}"></script>
+
+<script type="text/javascript">
+			
+WEB_SOCKET_SWF_LOCATION = "{{ url_for('secprofiles.static', filename='WebSocketMain.swf')}}";
+WEB_SOCKET_DEBUG = true;
+
+function zip(arrays) {
+    return arrays[0].map(function(_,i){
+        return arrays.map(function(array){return array[i]})
+    });
+}
+
+var Rg_Data;
+var I0_Data;
+var LowSelect=-1;
+var HighSelect=-1;
+var LowBufSelect=-1;
+var HighBufSelect=-1;
+var zoomChange=0;
+
+
+var defaultChartSettings = {
+	chart: {
+		renderTo: 'dummy',
+		type: 'scatter',
+		zoomType: 'xy',
+		events: {
+			selection: function(event){
+			zoomChange = 1;
+			},
+			redraw: function(event){
+				if (zoomChange == 1) {
+					highlightRec.attr({
+						x: raw_dat_chart.xAxis[0].toPixels(LowSelect),
+						width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighSelect) - raw_dat_chart.xAxis[0].toPixels(LowSelect),1)
+					});
+					highlightBufRec.attr({
+						x: raw_dat_chart.xAxis[0].toPixels(LowBufSelect),
+						width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighBufSelect) - raw_dat_chart.xAxis[0].toPixels(LowBufSelect),1)
+					});
+					zoomChange = 0;
+				}
+			}
+		}
+	},
+	title: {
+		text: 'Latest Rg Data'
+	},
+	xAxis: {
+		title: {
+			enabled: true,
+			text: 'File Index'
+		},
+		type: 'linear',
+		gridLineWidth: 1,
+		tickInterval: 50,
+		//minorTickInterval: 0.1,
+		startOnTick: false,
+        endOnTick: false,
+		showLastLabel: true
+	},
+	yAxis: [{ //Primary Y Axis
+		title: {
+			text: 'Rg (A)',
+			style: {
+				color: '#BC1414'
+			},
+		},
+		gridLineWidth: 1,
+		tickInterval: 5,
+		startOnTick: true,
+		endOnTick: true,
+		style: {
+			color: '#BC1414'
+		       },
+                } ,{ //Secondary Y Axis
+		title: {
+		    text: 'I0 (cm-1)',
+		    style: {
+			color: '#266BD3'
+		    },
+		startOnTick: true,
+		endOnTick: true,
+		},
+		style: {
+			color: '#266BD3'
+		},
+		opposite: true
+	}],
+	tooltip: {
+		enabled : true,
+		crosshairs: [true,true],
+		formatter: function(){
+			tip = ''
+			if ((this.x > LowSelect) && (this.x < HighSelect)) {
+				tip = tip + 'Click to Adjust Sample Low Limit <br/> Shift-Click to Adjust Sample High Limit <br/>'
+			}
+			if ((this.x > LowBufSelect) && (this.x < HighBufSelect)) {
+				tip = tip + 'Alt-Click to Adjust Buffer Low Limit <br/> Alt-Shift-Click to Adjust Buffer High Limit'
+			}
+			if (tip == ''){
+				tip = 'Click to Adjust Sample Limits <br/> Alt-Click to Adjust Buffer Limits'
+			} 
+			return tip;
+		}
+	},
+	plotOptions: {
+		scatter: {
+			cursor: 'pointer',
+			events: {
+				click: function(){
+					position = event.point.x// - event.point.series.data[0].x;
+					if (event.altKey) {
+						if (LowBufSelect == -1 && HighBufSelect == -1) {
+							LowBufSelect = HighBufSelect = position;
+							highlightBufRecLabel.attr({visibility: 'visible'});
+						} else if (position <= LowBufSelect) {
+							LowBufSelect = position;
+						} else if (position >= HighBufSelect){
+							HighBufSelect = position;
+						} else {
+							if (event.shiftKey) {
+								HighBufSelect = position;
+							} else {
+								LowBufSelect = position;
+							}
+						}
+						highlightBufRec.attr({
+							x: raw_dat_chart.xAxis[0].toPixels(LowBufSelect),
+							width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighBufSelect) - raw_dat_chart.xAxis[0].toPixels(LowBufSelect),1)
+						});
+						highlightBufRecLabel.attr({
+							x: raw_dat_chart.xAxis[0].toPixels(LowBufSelect) + (Math.max(raw_dat_chart.xAxis[0].toPixels(HighBufSelect) - raw_dat_chart.xAxis[0].toPixels(LowBufSelect),1))/2. - highlightBufRecLabel.element.clientWidth/2.
+						})
+					} else {
+						if (LowSelect == -1 && HighSelect == -1) {
+							LowSelect = HighSelect = position;
+							highlightRecLabel.attr({visibility: 'visible'});
+						} else if (position <= LowSelect) {
+							LowSelect = position;
+						} else if (position >= HighSelect){
+							HighSelect = position;
+						} else {
+							if (event.shiftKey) {
+								HighSelect = position;
+							} else {
+								LowSelect = position;
+							}
+						}
+						highlightRec.attr({
+							x: raw_dat_chart.xAxis[0].toPixels(LowSelect),
+							width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighSelect) - raw_dat_chart.xAxis[0].toPixels(LowSelect),1)
+						});
+						highlightRecLabel.attr({
+							x: raw_dat_chart.xAxis[0].toPixels(LowSelect) + (Math.max(raw_dat_chart.xAxis[0].toPixels(HighSelect) - raw_dat_chart.xAxis[0].toPixels(LowSelect),1))/2. - highlightRecLabel.element.clientWidth/2.
+						})
+					}
+					$('#fileindices').html(LowSelect + '; ' + HighSelect + '; ' + LowBufSelect + '; ' + HighBufSelect);
+				}
+			},
+			lineWidth : 0,
+			marker: {
+				radius: 2,
+				states: {
+					hover: {
+						enabled: true,
+						lineColor: 'rgb(100,100,100)'
+					}
+				}
+			},
+			states: {
+				hover: {
+					marker: {
+						enabled: false
+					}
+				}
+			}
+		}
+	},
+	series: [
+		{
+		name: 'Rg',
+		color: '#BC1414',
+		},
+		{
+		name: 'I0',
+		color: '#266BD3',
+		yAxis: 1
+		}
+	]
+};
+
+rawDatSettings = $.extend(deep=true,{},defaultChartSettings);
+
+// socket.io specific code
+var socket = io.connect('/secprofiles');
+
+socket.on('connect', function () {
+});
+
+socket.on('error', function (e) {
+    message('System', e ? e : 'A unknown error occurred');
+});
+
+socket.on('Rg_Array', function(data) {
+	Rg_Data = data;
+	raw_dat_chart.series[0].setData(data.profile);
+});
+socket.on('I0_Array', function(data) {
+	I0_Data = data;
+	raw_dat_chart.series[1].setData(data.profile);
+});
+
+
+function setLinLogAxis(chart, settings, data, axis){
+	chart.destroy();
+	switch (axis)
+	{
+		case 'linx':
+			settings.xAxis.type = 'linear';
+			break;
+		case 'logx':
+			settings.xAxis.type = 'logarithmic';
+			break;
+		case 'liny':
+			settings.yAxis.type = 'linear';
+			break;
+		case 'logy':
+			settings.yAxis.type = 'logarithmic';
+			break;
+	};
+	
+	settings.series[1].data=data.profile;
+	settings.title.text = data.filename;
+	chart = new Highcharts.Chart(settings);
+	return chart;
+};
+
+function setLinLog(chart, axis){
+	switch(chart)
+	{
+		case "raw_dat":
+			raw_dat_chart = setLinLogAxis(raw_dat_chart, rawDatSettings, Rg_Data, axis);
+			break;
+	};
+	
+};
+
+$(function () {
+
+	$(document).ready(function() {
+
+	$( "#Average" ).button({disabled : false})
+		.click(function(){
+			socket.emit('Average',[LowSelect,HighSelect])
+		});
+
+	rawDatSettings.chart.renderTo = 'raw_dat_div';
+	raw_dat_chart = new Highcharts.Chart(rawDatSettings);
+	
+	highlightRec = raw_dat_chart.renderer.rect(0,raw_dat_chart.plotTop,0,raw_dat_chart.plotHeight,5)
+	.attr({
+	    'stroke-width':2,
+	    stroke: 'red',
+	    fill: 'yellow',
+	    zIndex:0,
+	    opacity: 0.2
+	})
+	.add();
+	
+	highlightRecLabel = raw_dat_chart.renderer.text('<span style="color: red">Sample Range</span>',0,raw_dat_chart.plotTop+raw_dat_chart.plotHeight*.05)
+	.attr({visibility: 'hidden'})
+	.add();
+	
+	highlightBufRec = raw_dat_chart.renderer.rect(0,raw_dat_chart.plotTop,0,raw_dat_chart.plotHeight,5)
+	.attr({
+	    'stroke-width':2,
+	    stroke: 'blue',
+	    fill: 'cyan',
+	    zIndex:0,
+	    opacity: 0.2
+	})
+	.add();
+	
+	highlightBufRecLabel = raw_dat_chart.renderer.text('<span style="color: blue">Buffer Range</span>',0,raw_dat_chart.plotTop+raw_dat_chart.plotHeight*.05)
+	.attr({visibility: 'hidden'})
+	.add();
+	
+    });
+    
+});
+</script>
+</head>
+<body>
+<div style="float: left">
+	<div id="raw_dat_div" style="width: 1200px; height: 600px; margin: 0 auto"></div>
+</div>
+<div style="clear: both"></div>
+<div id="fileindices"></div>
+<button id="Average">Average</button>
+
+</body>
+</html>
