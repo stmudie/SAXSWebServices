@@ -6,18 +6,99 @@
 
 		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
 		<script type="text/javascript" src="{{ url_for('secprofiles.static', filename='socket.io.js')}}"></script>
-		<link rel="stylesheet" href="{{ url_for('secprofiles.static', filename='ui/css/jquery.ui.all.css')}}">
+		<!--<link rel="stylesheet" href="{{ url_for('secprofiles.static', filename='ui/css/jquery.ui.all.css')}}">
 		<script src="{{ url_for('secprofiles.static', filename='jquery-1.7.2.js')}}"></script>
-		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.core.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='jquery/ui/jquery.ui.core.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.widget.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.mouse.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.button.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.sortable.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.tabs.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='ui/jquery.ui.progressbar.js')}}"></script>-->
+		
+		<link rel="stylesheet" href="{{ url_for('secprofiles.static', filename='jquery/ui_10/css/smoothness/jquery-ui-1.10.3.custom.css')}}">
+		<script src="{{ url_for('secprofiles.static', filename='jquery/jquery-1.10.2.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='jquery/ui_10/js/jquery-ui-1.10.3.custom.js')}}"></script>
+		
 		<script src="{{ url_for('secprofiles.static', filename='verticalCheckPlugin.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='highcharts/highcharts.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='highcharts/modules/exporting.js')}}"></script>
 
+  <style>
+	.ui-progressbar {
+		position: relative;
+	}
+	.progress-label {
+		position: absolute;
+		left: 0%;
+		font-weight: bold;
+		text-shadow: 1px 1px 0 #fff;
+	}
+	.spinner {
+		width: 50px;
+	}
+	.inputFields label, .myfields input {
+		display:inline-block;
+	}
+	.inputFields label {
+		width:120px; /* or whatever size you want them */
+	}
+	.myGreenButton {
+		height: 30px;
+		width: 90px;
+		font-size: small;
+		color: black;
+		font-weight: bold;
+		background:-webkit-linear-gradient(top, #33AA2A, #30F41A 5%, #39E81E, #33AA2A 95%, #33AA2A);
+	}
+	.myGreenButton:hover {
+		color: white;
+	}
+	.myGreenButton:active {
+		color: white;
+		background:-webkit-linear-gradient(top, #30F41A, #33AA2A 5%, #277519, #39E81E 95%, #30F41A);
+	}
+	
+	#SaveToo {
+		height: 30px;
+		width: 90px;
+		font-size: small;
+		color: black;
+		font-weight: bold;
+		background:-webkit-linear-gradient(top, #A8712A, #F2B11A 5%, #E5B01D, #A8712A 95%, #A8712A);
+	}
+	
+	#SaveToo:hover {
+		color: white;
+	}
+	
+	#SaveToo:active {
+		color: white;
+		background:-webkit-linear-gradient(top, #F2B11A, #A8712A 5%, #725719, #E5B01D 95%, #F2B11A);
+	}
+	
+    .myOrangeButton {
+		height: 30px;
+		width: 90px;
+		font-size: small;
+		color: black;
+		font-weight: bold;
+		background:-webkit-linear-gradient(top, #A8712A, #F2B11A 5%, #E5B01D, #A8712A 95%, #A8712A);
+	}
+	.myOrangeButton:hover {
+		color: white;
+	}
+	.myOrangeButton:active {
+		color: white;
+		background:-webkit-linear-gradient(top, #F2B11A, #A8712A 5%, #725719, #E5B01D 95%, #F2B11A);
+	}
+	.myButton {
+		height: 30px;
+		font-size: small;
+		color: #333333;
+	}
+  </style>		
+		
 <script type="text/javascript">
 			
 WEB_SOCKET_SWF_LOCATION = "{{ url_for('secprofiles.static', filename='WebSocketMain.swf')}}";
@@ -29,34 +110,97 @@ function zip(arrays) {
     });
 }
 
+function isNumberKey(evt,id) {
+			var charCode = (evt.which) ? evt.which : event.keyCode;
+		        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
+				$('#'+id).css("background","rgb(255,0,0)");
+				setTimeout(function(){$('#'+id).css("background","rgb(255,255,255)")},200);
+				return false;
+			} else if (charCode == 46) {
+				if ($.inArray('.',$('#'+id).val()) == -1 ) {
+					return true;	
+				} else {
+					$('#'+id).css("background","rgb(255,0,0)");
+					setTimeout(function(){$('#'+id).css("background","rgb(255,255,255)")},200);
+					return false;
+				}
+				
+			} else {
+				return true;
+			}      
+		};
+
+function updateRectangle(rectangle, rectangleLabel, low, high) {
+	rectangle.attr({
+		x: raw_dat_chart.xAxis[0].toPixels(low),
+		width : Math.max(raw_dat_chart.xAxis[0].toPixels(high) - raw_dat_chart.xAxis[0].toPixels(low),1)
+	});
+		rectangleLabel.attr({
+		x: raw_dat_chart.xAxis[0].toPixels(low) + (Math.max(raw_dat_chart.xAxis[0].toPixels(high) - raw_dat_chart.xAxis[0].toPixels(low),1))/2. - rectangleLabel.element.clientWidth/2.
+	});
+}
+
+
 var Rg_Data;
 var I0_Data;
+var HighQ_Data;
 var LowSelect=-1;
 var HighSelect=-1;
 var LowBufSelect=-1;
 var HighBufSelect=-1;
 var zoomChange=0;
+var progressText='';
 
-
-var defaultChartSettings = {
+var saxsProfileSettings = {
 	chart: {
 		renderTo: 'dummy',
 		type: 'scatter',
 		zoomType: 'xy',
+		backgroundColor: '#F2F2F2',
+	},
+	title: {
+		text: 'SAXS Profile'
+	},
+	xAxis: {
+		title: {
+			enabled: true,
+			text: 'q (A-1)'
+		},
+		type: 'logarithmic',
+		gridLineWidth: 1,
+		tickInterval: 0.1,
+		//minorTickInterval: 0.1,
+		startOnTick: false,
+        endOnTick: false,
+        showLastLabel: true
+	},
+	yAxis: {
+		title: {
+			text: 'Intensity (cm-1)',
+		},
+		gridLineWidth: 1,
+		tickInterval: 0.1,
+		type: 'logarithmic',
+		startOnTick: false,
+		endOnTick: false,
+	}
+}
+
+
+var rawDatSettings = {
+	chart: {
+		renderTo: 'dummy',
+		type: 'scatter',
+		zoomType: 'xy',
+		backgroundColor: '#F2F2F2',
 		events: {
 			selection: function(event){
 			zoomChange = 1;
 			},
 			redraw: function(event){
 				if (zoomChange == 1) {
-					highlightRec.attr({
-						x: raw_dat_chart.xAxis[0].toPixels(LowSelect),
-						width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighSelect) - raw_dat_chart.xAxis[0].toPixels(LowSelect),1)
-					});
-					highlightBufRec.attr({
-						x: raw_dat_chart.xAxis[0].toPixels(LowBufSelect),
-						width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighBufSelect) - raw_dat_chart.xAxis[0].toPixels(LowBufSelect),1)
-					});
+					updateRectangle(highlightRec,highlightRecLabel,LowSelect,HighSelect);
+					updateRectangle(highlightBufRec,highlightBufRecLabel,LowBufSelect,HighBufSelect);
 					zoomChange = 0;
 				}
 			}
@@ -92,33 +236,44 @@ var defaultChartSettings = {
 		style: {
 			color: '#BC1414'
 		       },
-                } ,{ //Secondary Y Axis
+        }, { //Secondary Y Axis
 		title: {
 		    text: 'I0 (cm-1)',
 		    style: {
 			color: '#266BD3'
 		    },
-		startOnTick: true,
-		endOnTick: true,
 		},
 		style: {
 			color: '#266BD3'
 		},
 		opposite: true
-	}],
+		}, { //Tertiary Y Axis
+		title: {
+		    text: 'I High Q (cm-1)',
+		    style: {
+			color: '#1BA01D'
+		    },
+		},
+		style: {
+			color: '#1BA01D'
+		},
+		showEmpty: false,
+		opposite: true
+		}
+	],
 	tooltip: {
 		enabled : true,
 		crosshairs: [true,true],
 		formatter: function(){
 			tip = ''
 			if ((this.x > LowSelect) && (this.x < HighSelect)) {
-				tip = tip + 'Click to Adjust Sample Low Limit <br/> Shift-Click to Adjust Sample High Limit <br/>'
+				tip = tip + 'Click to Adjust Sample Low Limit <br/> Shift-Click to Adjust Sample High Limit <br/> Ctrl-Click to Plot <br/>'
 			}
 			if ((this.x > LowBufSelect) && (this.x < HighBufSelect)) {
-				tip = tip + 'Alt-Click to Adjust Buffer Low Limit <br/> Alt-Shift-Click to Adjust Buffer High Limit'
+				tip = tip + 'Alt-Click to Adjust Buffer Low Limit <br/> Alt-Shift-Click to Adjust Buffer High Limit <br/> Ctrl-Click to Plot'
 			}
 			if (tip == ''){
-				tip = 'Click to Adjust Sample Limits <br/> Alt-Click to Adjust Buffer Limits'
+				tip = 'Click to Adjust Sample Limits <br/> Alt-Click to Adjust Buffer Limits <br/> Ctrl-Click to Plofe'
 			} 
 			return tip;
 		}
@@ -128,7 +283,7 @@ var defaultChartSettings = {
 			cursor: 'pointer',
 			events: {
 				click: function(){
-					position = event.point.x// - event.point.series.data[0].x;
+					position = event.point.x;
 					if (event.altKey) {
 						if (LowBufSelect == -1 && HighBufSelect == -1) {
 							LowBufSelect = HighBufSelect = position;
@@ -144,13 +299,9 @@ var defaultChartSettings = {
 								LowBufSelect = position;
 							}
 						}
-						highlightBufRec.attr({
-							x: raw_dat_chart.xAxis[0].toPixels(LowBufSelect),
-							width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighBufSelect) - raw_dat_chart.xAxis[0].toPixels(LowBufSelect),1)
-						});
-						highlightBufRecLabel.attr({
-							x: raw_dat_chart.xAxis[0].toPixels(LowBufSelect) + (Math.max(raw_dat_chart.xAxis[0].toPixels(HighBufSelect) - raw_dat_chart.xAxis[0].toPixels(LowBufSelect),1))/2. - highlightBufRecLabel.element.clientWidth/2.
-						})
+						updateRectangle(highlightBufRec,highlightBufRecLabel,LowBufSelect,HighBufSelect);
+					} else if (event.ctrlKey) {
+						socket.emit('Load_Profile',{'position': position, 'subtract': $('#subtract').is(':checked'), 'bufferrange':[LowBufSelect,HighBufSelect]});
 					} else {
 						if (LowSelect == -1 && HighSelect == -1) {
 							LowSelect = HighSelect = position;
@@ -166,15 +317,12 @@ var defaultChartSettings = {
 								LowSelect = position;
 							}
 						}
-						highlightRec.attr({
-							x: raw_dat_chart.xAxis[0].toPixels(LowSelect),
-							width : Math.max(raw_dat_chart.xAxis[0].toPixels(HighSelect) - raw_dat_chart.xAxis[0].toPixels(LowSelect),1)
-						});
-						highlightRecLabel.attr({
-							x: raw_dat_chart.xAxis[0].toPixels(LowSelect) + (Math.max(raw_dat_chart.xAxis[0].toPixels(HighSelect) - raw_dat_chart.xAxis[0].toPixels(LowSelect),1))/2. - highlightRecLabel.element.clientWidth/2.
-						})
+						updateRectangle(highlightRec,highlightRecLabel,LowSelect,HighSelect);
 					}
-					$('#fileindices').html(LowSelect + '; ' + HighSelect + '; ' + LowBufSelect + '; ' + HighBufSelect);
+					$('#LowBufSpin').spinner("value",LowBufSelect);
+					$('#HighBufSpin').spinner("value",HighBufSelect);
+					$('#LowSpin').spinner("value",LowSelect);
+					$('#HighSpin').spinner("value",HighSelect);
 				}
 			},
 			lineWidth : 0,
@@ -205,11 +353,16 @@ var defaultChartSettings = {
 		name: 'I0',
 		color: '#266BD3',
 		yAxis: 1
+		},
+		{
+		name: 'HighQ',
+		color: '#1BA01D',
+		yAxis: 2,
+		visible: false
 		}
 	]
 };
 
-rawDatSettings = $.extend(deep=true,{},defaultChartSettings);
 
 // socket.io specific code
 var socket = io.connect('/secprofiles');
@@ -222,14 +375,61 @@ socket.on('error', function (e) {
 });
 
 socket.on('Rg_Array', function(data) {
-	Rg_Data = data;
-	raw_dat_chart.series[0].setData(data.profile);
+	filename = data.filename;
+	Rg_Data = data.profile;
+	raw_dat_chart.series[0].setData(Rg_Data);
+	raw_dat_chart.setTitle({text: filename});
 });
 socket.on('I0_Array', function(data) {
 	I0_Data = data;
 	raw_dat_chart.series[1].setData(data.profile);
 });
+socket.on('HighQ_Array', function(data) {
+	HighQ_Data = data;
+	raw_dat_chart.series[2].setData(data.profile);
+});
+socket.on('Buffer_Load', function(data) {
+	progressText = 'Buffer Loading: ';
+	progressbar = $( "#progressbar" );
+	progressbar.progressbar("value", data);
+});
 
+socket.on('Sample_Load', function(data) {
+	progressText = 'Sample Loading: ';
+	progressbar = $( "#progressbar" );
+	progressbar.progressbar("value", data);
+});
+
+socket.on('Profile', function(data) {
+	filename = data.filename;
+	if ($('#overplot').is(':checked')) {
+		saxs_profile_chart.addSeries({name: filename, data:data.profile});
+	} else {
+		if ((saxs_profile_chart.series).length > 1) {
+			for (var i=saxs_profile_chart.series.length-1; i>=1; i--) {
+				saxs_profile_chart.series[i].remove(false)
+			}
+		}
+		if ((saxs_profile_chart.series).length < 1) {
+			saxs_profile_chart.addSeries({name: filename, data:data.profile});
+		}
+		saxs_profile_chart.series[0].setData(data.profile);
+		saxs_profile_chart.setTitle({text: filename});
+	}
+});
+
+socket.on('AllSampleProfiles', function(data) {
+	if ((saxs_profile_chart.series).length > 0) {
+		for (var i=saxs_profile_chart.series.length-1; i>=0; i--) {
+			saxs_profile_chart.series[i].remove(false)
+		}
+	}
+	
+	for (var i = 0; i < data.length; i++) {
+		saxs_profile_chart.addSeries({name: data[i].filename, data:data[i].profile},false);
+	}
+	saxs_profile_chart.redraw();
+});
 
 function setLinLogAxis(chart, settings, data, axis){
 	chart.destroy();
@@ -267,56 +467,175 @@ function setLinLog(chart, axis){
 
 $(function () {
 
+	var progressbar = $("#progressbar"),
+	  progressLabel = $(".progress-label");
+
+	
+	  
+	progressbar.progressbar({
+	  value: 0,
+      change: function() {
+        $("#dialog").dialog("open");
+		progressLabel.text( progressText + progressbar.progressbar( "value" ) + "%" );
+      },
+      complete: function() {
+        progressLabel.text( progressText + "Complete!" );
+		$("#dialog").dialog("close");
+      }
+    });	
+	
+  });
+
+
+$(function () {
+
+	
 	$(document).ready(function() {
 
-	$( "#Average" ).button({disabled : false})
-		.click(function(){
-			socket.emit('Average',[LowSelect,HighSelect])
-		});
+		rawDatSettings.chart.renderTo = 'raw_dat_div';
+		raw_dat_chart = new Highcharts.Chart(rawDatSettings);
+		
+		saxsProfileSettings.chart.renderTo = 'saxsprofile_div';
+		saxs_profile_chart = new Highcharts.Chart(saxsProfileSettings);
+		
+		highlightRec = raw_dat_chart.renderer.rect(0,raw_dat_chart.plotTop,0,raw_dat_chart.plotHeight,5)
+		.attr({
+			'stroke-width':2,
+			stroke: 'red',
+			fill: 'yellow',
+			zIndex:0,
+			opacity: 0.2
+		})
+		.add();
+		
+		highlightRecLabel = raw_dat_chart.renderer.text('<span style="color: red">Sample Range</span>',0,raw_dat_chart.plotTop+raw_dat_chart.plotHeight*.05)
+		.attr({visibility: 'hidden'})
+		.add();
+		
+		highlightBufRec = raw_dat_chart.renderer.rect(0,raw_dat_chart.plotTop,0,raw_dat_chart.plotHeight,5)
+		.attr({
+			'stroke-width':2,
+			stroke: 'blue',
+			fill: 'cyan',
+			zIndex:0,
+			opacity: 0.2
+		})
+		.add();
+		
+		highlightBufRecLabel = raw_dat_chart.renderer.text('<span style="color: blue">Buffer Range</span>',0,raw_dat_chart.plotTop+raw_dat_chart.plotHeight*.05)
+		.attr({visibility: 'hidden'})
+		.add();
 
-	rawDatSettings.chart.renderTo = 'raw_dat_div';
-	raw_dat_chart = new Highcharts.Chart(rawDatSettings);
-	
-	highlightRec = raw_dat_chart.renderer.rect(0,raw_dat_chart.plotTop,0,raw_dat_chart.plotHeight,5)
-	.attr({
-	    'stroke-width':2,
-	    stroke: 'red',
-	    fill: 'yellow',
-	    zIndex:0,
-	    opacity: 0.2
-	})
-	.add();
-	
-	highlightRecLabel = raw_dat_chart.renderer.text('<span style="color: red">Sample Range</span>',0,raw_dat_chart.plotTop+raw_dat_chart.plotHeight*.05)
-	.attr({visibility: 'hidden'})
-	.add();
-	
-	highlightBufRec = raw_dat_chart.renderer.rect(0,raw_dat_chart.plotTop,0,raw_dat_chart.plotHeight,5)
-	.attr({
-	    'stroke-width':2,
-	    stroke: 'blue',
-	    fill: 'cyan',
-	    zIndex:0,
-	    opacity: 0.2
-	})
-	.add();
-	
-	highlightBufRecLabel = raw_dat_chart.renderer.text('<span style="color: blue">Buffer Range</span>',0,raw_dat_chart.plotTop+raw_dat_chart.plotHeight*.05)
-	.attr({visibility: 'hidden'})
-	.add();
-	
-    });
+		$( '#ClearBuffer').button()
+			.click(function(){
+				HighBufSelect = (LowBufSelect = -1);
+				updateRectangle(highlightBufRec, highlightBufRecLabel, LowBufSelect, HighBufSelect);
+				highlightBufRecLabel.attr({visibility: 'hidden'});
+			});
+		
+		$( "#Average" ).button({disabled : false})
+			.click(function(){
+				socket.emit('Average',{buffer:[LowBufSelect,HighBufSelect], sample: [LowSelect,HighSelect]})
+			});
+		$( "#Save" ).button({disabled : false})
+			.click(function(){
+				$("#SaveDialog").dialog("open");
+			});
+		$( "#SaveToo" ).button({disabled : false})
+			.click(function(){
+				socket.emit('SaveAverage',$("#Name").val())
+				$("#SaveDialog").dialog("close");
+			});
+		$( "#plotallsample" ).button({disabled : false})
+			.click(function(){
+				socket.emit('Plotallsample',{range: [LowSelect,HighSelect], subtract: $('#subtract').is(':checked'), bufferrange: [LowBufSelect,HighBufSelect]})
+			});
+			
+		$( "#plotallbuffer" ).button({disabled : false})
+			.click(function(){
+				socket.emit('Plotallsample',{range: [LowBufSelect,HighBufSelect], subtract: false})
+			});
+		
+		$("#dialog").dialog({
+			autoOpen: false,
+			modal: true,
+			height: 100,
+			width: 400
+		});
+		
+		$("#SaveDialog").dialog({
+			autoOpen: false,
+			modal: true,
+			height: 100,
+			width: 500
+		});
+		
+		$(".spinner").spinner({
+			spin: function( event, ui) {
+				$(this).trigger('allchanges');
+			}
+		}).keyup(function(event){
+			if (event.keyCode == 13) {
+				$(this).trigger('allchanges');
+			}
+		}).on('allchanges', function(event){
+			if (this.className.indexOf('buffer') >=0) {
+				LowBufSelect = $('#LowBufSpin').val();
+				HighBufSelect = $('#HighBufSpin').val();
+				updateRectangle(highlightBufRec,highlightBufRecLabel,$('#LowBufSpin').val(),$('#HighBufSpin').val());
+			}
+			if (this.className.indexOf('sample') >=0) {
+				LowSelect = $('#LowBufSpin').val();
+				HighSelect = $('#HighBufSpin').val();
+				updateRectangle(highlightRec,highlightRecLabel,$('#LowSpin').val(),$('#HighSpin').val());
+			}
+		});
+	});
     
 });
 </script>
 </head>
 <body>
-<div style="float: left">
+
+<div id="dialog" title="Progress">
+	<div id="progressbar"><div class="progress-label"></div></div>
+</div>
+<div id="SaveDialog" title="Save Average">
+	<label for="Name">File Name:</label>
+	<input id="Name"/>.dat
+	<button id="SaveToo" class="myOrangeButton">Save</button>
+</div>
+
+<div class="inputFields" style="float: left; padding: 10px; border: 2px solid; background: #DADCEF; height: 1200px">
+
+    <h3> Averaging </h3>
+	<label for="LowBufSpin">Low Buffer:</label>
+	<input id="LowBufSpin" class="spinner buffer" name="LowBufSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
+	<label for="HighBufSpin">High Buffer:</label>
+	<input id="HighBufSpin" class="spinner buffer" name="HighBufSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
+	<button id="ClearBuffer" class="myButton">Clear Buffer</button><br>
+	<label for="LowSpin">Low Sample:</label>
+	<input id="LowSpin" class="spinner sample" name="LowSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
+	<label for="HighSpin">High Sample:</label>
+	<input id="HighSpin" class="spinner sample" name="HighSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
+	<button id="Average" class="myGreenButton">Average</button></br>
+	<button id="Save" class="myOrangeButton">Save</button></br>
+
+	<h3> Individual Plotting </h3>
+	<input type="checkbox" id="subtract" /><label for="subtract">Subtract Buffer</label><br>
+	<div style="font-size: x-small">Uses selected buffer region if available </br> otherwise first 20 shots.</div></br>
+	<input type="checkbox" id="overplot" /><label for="overlot">Overplot</label></br>
+	<h6 style="-webkit-margin-after: 0.5em">Plot All Selected:</h6>
+	<button id="plotallsample" class="myButton">Samples</button>
+	<button id="plotallbuffer" class="myButton">Buffers</button></br>
+</div>
+
+<div style="float: left; border:2px solid; background:#F2F2F2">
 	<div id="raw_dat_div" style="width: 1200px; height: 600px; margin: 0 auto"></div>
+	<div id="saxsprofile_div" style="width: 1200px; height: 600px; margin: 0 auto"></div>
 </div>
 <div style="clear: both"></div>
-<div id="fileindices"></div>
-<button id="Average">Average</button>
+	
 
 </body>
 </html>
