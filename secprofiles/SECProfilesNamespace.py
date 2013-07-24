@@ -22,7 +22,6 @@ class SECProfilesNamespace(BaseNamespace):
         self.emit(name, {'filename':filename,'profile':fullProfile})
     
     def updateAverageBuffer(self, bufferrange):
-        print bufferrange
         if bufferrange == self.bufferrange:
             return
         
@@ -110,7 +109,12 @@ class SECProfilesNamespace(BaseNamespace):
     
     def sendProfile(self, name, filter_on_quality = 0):
         filename = r.get('pipeline:sec:filename')
-        data = pickle.loads(r.get('pipeline:sec:Rg'))
+        try:
+            data = pickle.loads(r.get('pipeline:sec:Rg'))
+        except TypeError:
+            self.emit('ErrorMessage',{'title': "Error", 'message': "No data in database."})
+            return
+        
         namedict = {'Rg_Array': 1, 'I0_Array' : 2, 'Quality' : 3, 'HighQ_Array' : 4}
         for n in name:
             array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0]

@@ -159,7 +159,6 @@ class DatFile(object):
     
     @property
     def fileindex(self):
-        print self.basename
         return self.basename_rmext.rsplit('_',1)[1]
     
     @property

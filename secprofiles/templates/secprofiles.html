@@ -374,6 +374,13 @@ socket.on('error', function (e) {
     message('System', e ? e : 'A unknown error occurred');
 });
 
+socket.on('ErrorMessage', function(message){
+	$("#MessageDialog").text(message.message);
+	$("#MessageDialog").dialog("option","title",message.title);
+	$("#MessageDialog").dialog("open");
+	
+});
+
 socket.on('Rg_Array', function(data) {
 	filename = data.filename;
 	Rg_Data = data.profile;
@@ -556,6 +563,13 @@ $(function () {
 				socket.emit('Plotallsample',{range: [LowBufSelect,HighBufSelect], subtract: false})
 			});
 		
+		$("#MessageDialog").dialog({
+			autoOpen: false,
+			modal: true,
+			height: 100,
+			width: 500
+		});
+		
 		$("#dialog").dialog({
 			autoOpen: false,
 			modal: true,
@@ -596,6 +610,8 @@ $(function () {
 </script>
 </head>
 <body>
+
+<div id="MessageDialog" title="Message"></div>
 
 <div id="dialog" title="Progress">
 	<div id="progressbar"><div class="progress-label"></div></div>
