@@ -72,7 +72,7 @@ class WellPlateNamespace(BaseNamespace):
         # Setup global scan record parameters
         scanPV = 'SR13ID01HU02IOC02:scan1.'
         result = 0
-        result += caput(indexPV + ':arrayIndex1',0)
+        result += caput(basePV + ':arrayIndex1',0)
         result += caput(scanPV+'CMND',6)
         result += caput(scanPV+'BSPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
         result += caput(scanPV+'BSCD',0)
@@ -96,39 +96,43 @@ class WellPlateNamespace(BaseNamespace):
             time.sleep(0.1)
             result += caput(scanPV+'P'+str(1+posNum)+'PA',data[dictKey[posNum]])
             result += caput(scanPV+'NPTS', len(positions))
+
+
         if result != 15 :
             print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
     
         # Setup sample name, concentration and molarWeight positioners
         result = 0
+
         result += caput(indexPV+'1:arrayValues', str(sampleNameString))
         result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
         result += caput(indexPV+'2:arrayValues', concentration)
         result += caput(indexPV+'2:arrayIndices', range(len(positions)))
         result += caput(indexPV+'3:arrayValues', molarWeight)
         result += caput(indexPV+'3:arrayIndices', range(len(positions)))
+
         result += caput(scanPV+'P4SM', 0)
-        result += caput(scanPV+'P4SP', 0)
-        result += caput(scanPV+'P4EP', len(positions)-1)
-        result += caput(scanPV+'R4PV', indexPV + ':arrayIndex1')
-        result += caput(scanPV+'P4PV', indexPV + ':arrayIndex1')
-        result += caput(indexPV+':arrayIndex2',0)
-        result += caput(indexPV+':arrayIndex3',0)
+        result += caput(scanPV+'P4SP', 1)
+        result += caput(scanPV+'P4EP', len(positions))
+        result += caput(scanPV+'R4PV', basePV + 'fileIndex1')
+        result += caput(scanPV+'P4PV', basePV + 'fileIndex1')
+        result += caput(basePV+':arrayIndex2',0)
+        result += caput(basePV+':arrayIndex3',0)
         if result != 11 :
             print "Something wrong setting some PVs. Continuing anyway."
  
         # Setup detectors
         result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
         if result != 1 :
-            print "Something wrong setting some PVs. Continuing anyway."
-        
+            print "Something wrong setting some PVs. Continuing anyway."        
+
     def run(self):
         scanPV = 'SR13ID01HU02IOC02:scan1.'
         scanning = caput(scanPV+'EXSC', 1)
         
     def on_runall(self,epn,plate):
         self.on_initialise(epn, plate, type = 'all')
-	self.run()
+        self.run()
 
     def on_runselected(self,epn,plate):
         self.on_initialise(epn, plate, type = 'selected')

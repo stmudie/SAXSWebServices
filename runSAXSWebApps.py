@@ -12,8 +12,8 @@ from pipelinereport import pipelinereport_app
 from pipelinereport import PipelineReportNamespace
 from genericscan import genericscan_app
 from genericscan import GenericScanNamespace
-from mdaplotter import mdaplotter_app
-from mdaplotter import MDAPlotterNamespace
+#from mdaplotter import mdaplotter_app
+#from mdaplotter import MDAPlotterNamespace
 from landingpage import landingpage_app
 from reverse import ReverseProxied
 from plugins import vbl, beamline
@@ -33,7 +33,7 @@ app.register_blueprint(saxsprofiles_app, url_prefix='/saxsprofiles')
 app.register_blueprint(secprofiles_app, url_prefix='/secprofiles')
 app.register_blueprint(pipelinereport_app, url_prefix='/pipelinereport')
 app.register_blueprint(genericscan_app, url_prefix='/genericscan')
-app.register_blueprint(mdaplotter_app, url_prefix='/mdaplotter')
+#app.register_blueprint(mdaplotter_app, url_prefix='/mdaplotter')
 app.register_blueprint(landingpage_app, url_prefix='/')
 
 #attributes = { 'epn': ['default_0001'], 'nicknames': [] }
@@ -47,7 +47,8 @@ def run_socketio(path):
     
     attributes = { 'epn' : [user]}
     print path
-    socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/mdaplotter':MDAPlotterNamespace}, attributes)
+    #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/mdaplotter':MDAPlotterNamespace}, attributes)
+    socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace}, attributes)
     return ''
 
 if __name__ == '__main__':
