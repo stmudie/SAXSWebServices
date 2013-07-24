@@ -1,0 +1,226 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>SAXS Profiles</title>
+
+		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
+		<script type="text/javascript" src="{{ url_for('mdaplotter.static', filename='socket.io.js')}}"></script>
+		<link rel="stylesheet" href="{{ url_for('mdaplotter.static', filename='jquery/ui/css/jquery.ui.all.css')}}">
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/jquery-1.8.2.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery-ui.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.core.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.widget.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.mouse.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.sortable.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='jquery/ui/jquery.ui.autocomplete.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='verticalCheckPlugin.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='highcharts/highcharts.js')}}"></script>
+		<script src="{{ url_for('mdaplotter.static', filename='highcharts/modules/exporting.js')}}"></script>
+<style>
+.ui-autocomplete {
+		max-height:900px;
+                overflow-y:auto;
+                overflow-x:hidden;
+}
+</style>
+<script type="text/javascript">
+			
+WEB_SOCKET_SWF_LOCATION = "{{ url_for('mdaplotter.static', filename='WebSocketMain.swf')}}";
+WEB_SOCKET_DEBUG = true;
+
+var raw_dat_data;
+
+var defaultChartSettings = {
+            chart: {
+                renderTo: 'dummy',
+                type: 'scatter',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Reflectivity Data'
+            },
+            xAxis: {
+                title: {
+                    enabled: true,
+                    text: 'q (A-1)'
+                },
+                type: 'logarithmic',
+		gridLineWidth: 1,
+		tickInterval: 0.1,
+		//minorTickInterval: 0.1,
+		startOnTick: false,
+                endOnTick: false,
+                showLastLabel: true
+            },
+            yAxis: {
+                title: {
+                    text: 'Intensity'
+                },
+		gridLineWidth: 1,
+		tickInterval: 0.1,
+		type: 'logarithmic',
+		startOnTick: false,
+		endOnTick: false,
+            },
+            plotOptions: {
+                scatter: {
+                    lineWidth : 2,
+		    marker: {
+                        radius: 2,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                lineColor: 'rgb(100,100,100)'
+                            }
+                        }
+                    },
+                    states: {
+                        hover: {
+                            marker: {
+                                enabled: false
+                            }
+                        }
+                    }
+                }
+            },
+            series: [{
+                name: 'saxs',
+                color: 'rgba(223, 83, 83, .5)'
+                }]
+        };
+
+rawDatSettings = $.extend(deep=true,{},defaultChartSettings);
+	
+
+// socket.io specific code
+var socket = io.connect('/mdaplotter');
+
+socket.on('connect', function () {
+});
+
+socket.on('error', function (e) {
+    message('System', e ? e : 'A unknown error occurred');
+});
+
+socket.on('raw_dat', function(data) {
+	raw_dat_data = data;
+	raw_dat_chart.series[0].setData(data.profile);
+	raw_dat_chart.setTitle({text: data.filename});
+});
+
+socket.on('file_list', function(list) {
+	console.log(list);
+	$( "#filelist" ).autocomplete( "option", "source", list);
+});
+
+function setLinLogAxis(chart, settings, data, axis){
+	chart.destroy();
+	switch (axis)
+	{
+		case 'linx':
+			settings.xAxis.type = 'linear';
+			break;
+		case 'logx':
+			settings.xAxis.type = 'logarithmic';
+			break;
+		case 'liny':
+			settings.yAxis.type = 'linear';
+			break;
+		case 'logy':
+			settings.yAxis.type = 'logarithmic';
+			break;
+	};
+	
+	settings.series[0].data=data.profile;
+	settings.title.text = data.filename;
+	chart = new Highcharts.Chart(settings);
+	return chart;
+};
+
+function setLinLog(chart, axis){
+	switch(chart)
+	{
+		case "raw_dat":
+			raw_dat_chart = setLinLogAxis(raw_dat_chart, rawDatSettings, raw_dat_data, axis);
+			break;
+	};
+	
+};
+
+$(function () {
+
+	$(document).ready(function() {
+
+	$( "#raw_dat_choice_y" ).buttonsetv();
+	$( "#raw_dat_choice_x" ).buttonset();
+	
+	$( ".linlog")
+		.button()
+		.click(function() {
+				lastUnderscore = (event.target.id).lastIndexOf('_')
+				chartName = (event.target.id).substring(0,lastUnderscore);
+				axis = (event.target.id).substring(lastUnderscore+1,lastUnderscore+5);
+				setLinLog(chartName,axis);
+			});
+		
+	$( "#tabs" ).tabs({collapsible: true}).find( ".ui-tabs-nav" ).sortable({ axis: "x" });
+		
+	
+	rawDatSettings.chart.renderTo = 'raw_dat_div';
+	raw_dat_chart = new Highcharts.Chart(rawDatSettings);
+	
+	$("#filelist").autocomplete({
+                minLength:0,
+		select: function(event, ui){
+			socket.emit('filename',ui.item.value);
+			$(this).blur();
+		}
+		}).focus(function(){
+			$(this).autocomplete('search', '');
+		});
+	
+    });
+    
+});
+</script>
+</head>
+<body>
+
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1">Raw Profiles</a></li>
+	</ul>
+	<div id="tabs-1">
+		<label for="filelist">File</label>
+		<input id="filelist"></input>
+		<div>
+			<div style="width: 200px; float: left">
+				<form>
+					<div id="raw_dat_choice_y">
+						<input type="radio" id="raw_dat_logy" class="linlog" name="radio" checked="checked"/><label for="raw_dat_logy">Logarithmic</label>
+						<input type="radio" id="raw_dat_liny" class="linlog" name="radio" /><label for="raw_dat_liny">Linear</label>
+					</div>
+				</form>
+			</div>
+			<div style="float: left">
+				<div id="raw_dat_div" style="width: 1200px; height: 600px; margin: 0 auto"></div>
+			</div>
+			<div style="clear: both"></div>
+		</div>
+		<div style="width: 400px; margin-left: auto; margin-right: auto">
+			<form>
+				<div id="raw_dat_choice_x" >
+					<input type="radio" id="raw_dat_logx" class="linlog" name="radio" checked="checked"/><label for="raw_dat_logx">Logarithmic</label>
+					<input type="radio" id="raw_dat_linx" class="linlog" name="radio" /><label for="raw_dat_linx">Linear</label>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+</body>
+</html>

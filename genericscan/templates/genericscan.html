@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Generic Scanner</title>
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='jquery/ui/css/jquery-ui.css')}}">
+	<script type="text/javascript" src="{{ url_for('genericscan.static', filename='socket.io.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/jquery-1.8.2.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery-ui.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.core.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.widget.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.mouse.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.sortable.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.selectable.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
+		
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='demos.css')}}">
+
+	<script src="{{ url_for('genericscan.static', filename='jquery/jquery.event.drag/jquery.event.drag.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.core.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.cellrangedecorator.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.cellrangeselector.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.cellselectionmodel.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.formatters.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.editors.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.grid.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.headerbuttons.js')}}"></script>
+		
+	<script src="{{ url_for('genericscan.static', filename='positioners.js')}}"></script>
+		
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/slick.grid.css')}}" type="text/css"/>
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/css/smoothness/jquery-ui-1.8.16.custom.css')}}" type="text/css"/>
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/examples/examples.css')}}" type="text/css"/>
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.headerbuttons.css')}}" type="text/css"/>
+	
+	<style>
+	
+	/* styles for slickgrid */
+	.centre-span {text-align: center;}
+	.num-column {border-right-color: silver; border-right-style: solid; background: #f5f5f5; color: gray; text-align: right; font-size: 10px;}
+	
+	/*styles for the Run Order Tab*/
+	.sortableRowNamesOrder {list-style-type: none; float: left; margin: 0; margin-top: 10px; margin-right: 5px; padding: 0; width: 25px;}
+	.sortableRowNamesOrder li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 20px; height: 40px; font-size: 1em; text-align: center;}
+	.sortableOrder { list-style-type: none; float: left; margin: 0; margin-top: 10px; padding: 0; width: 100px; }
+	.sortableOrder li { margin: 0px 0px 0px 0px; padding: 1px; float: left; width: 100px; height: 40px;  text-align: center; border-radius: 5px; }
+	.sortOrderCell {text-align: left; opacity: .5; font-size: 1.2em; padding-left : 5px; float: left;}
+	.selectedOrderCell {color: rgb(255,100,0);font-weight: bold; opacity: 1;}
+	.sortOrderName {font-weight: bold;text-align: center; word-break: break-word; display: inline-block;}
+	.sortOrderConc {font-size: 0.8em;}
+	.sortOrderConcUnit {font-size: 1em;}
+	.removeSelect {!important; border: hidden !important;}
+	.deselectbutton {width: 100px; margin-right:80px;}
+	.stop-button {background: rgb(200,40,40) !important;color: rgb(240,240,240) !important;}
+	.stop-button:hover {background: rgb(180,40,40) !important;color: rgb(255,255,255) !important;}
+	.stop-button:active {background: rgb(255,0,0) !important;color: rgb(255,255,255) !important;}
+	.run-button {background: rgb(40,200,40) !important;}
+	.run-button:hover {background: rgb(40,180,40) !important;color: rgb(255,255,255) !important;}
+	.run-button:active {background: rgb(0,255,0) !important; color: rgb(0,0,0) !important;}
+	/* ****** */
+	
+	#topbar {padding: 10px 5px;}
+	#runbar {padding: 10px 5px;}
+	#selecttools {margin-bottom: 5px; float:left;}
+	#sortableHead { list-style-type: none; float: left; margin: 0; padding: 0; width: 1450px; }
+	#sortableRowNames {list-style-type: none; float: left; margin: 0; margin-right: 55px; padding: 0; width: 50px;}
+	#sortable { list-style-type: none; float: left; margin: 0; padding: 0; width: 1350px; }
+	#sortableHead li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 45px; font-size: 4em; text-align: center;}
+	#sortableRowNames li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px; font-size: 4em; text-align: center;}
+	#sortable li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px;  text-align: center; border-radius: 10px;}
+	
+	.sampleName {display:block; margin-top:10px; margin-left: 5px; width:82px;}
+	.sampleConc {display:inline-block; margin-top: 0px; margin-left: 5px; margin-right: 0px; width:37px;}
+	.sampleMW{display:inline-block; margin-top: 0px; margin-left: 0px; margin-right: 8px; width:37px;}
+	
+	.ui-icon.white { background-image: url("{{ url_for('genericscan.static', filename='jquery/ui/css/images/ui-icons_ffffff_256x240.png')}}"); }
+
+	li .selecthandle { background: #ddddf5; position: relative; left: 0; top: 0; bottom: 0; padding:0px; }
+	.ui-selecting .selecthandle { background: pink; }
+	.ui-selected .selecthandle { background: pink; }
+	select {display: block; margin: 3px; font-size: x-small; width:90px;}
+	</style>
+	<script>
+		WEB_SOCKET_SWF_LOCATION = "{{ url_for('genericscan.static', filename='WebSocketMain.swf')}}";
+		WEB_SOCKET_DEBUG = true;
+		
+		// socket.io specific code
+		var socket = io.connect('/genericscan');
+		var globalepn;
+		var globalscan;
+				
+		socket.on('connect', function(){
+			socket.emit('connect')
+		});
+		
+		socket.on('epn', function(epn){
+			if ('{{epn}}' != '' && '{{epn}}' != epn) {
+				socket.emit('changeepn','{{epn}}')
+			} else {
+				globalepn = epn;
+				$("#epnTitle").html('Current USER/EPN: ' + globalepn);
+				if (epn != undefined && '{{scan}}' != '')
+				{
+					$("#scanname").val('{{scan}}');
+					socket.emit('load',globalepn,'{{scan}}');
+				}
+			}
+		});
+		
+		socket.on('loadlist', function (list) {
+			//$( "#platename" ).autocomplete( "option", "source", list);
+		});
+		
+		socket.on('platedata', function(epn,plate,data){
+			
+			globalepn = epn;
+			globalplate = plate;
+			
+			console.log('load:' + globalepn + " " + globalplate);
+			
+			$("#qrimage").attr('src','/genericscan/qrcode/' + epn + '/' + plate);
+			$("#qrimagelink").attr('href','/genericscan/qrcode/' + epn + '/' + plate);
+			
+			$(".sampleName").each(function(index){
+				$(this).val(data.sampleNames[index]).change();
+			});
+			$(".sampleType").each(function(index){
+				$(this).val(data.sampleType[index]).change();
+				//sampleTypeColour($(this.parentNode),data.sampleType[index]);
+			});
+			$(".sampleConc").each(function(index){
+				$(this).val(data.sampleConc[index]).change();
+				//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
+			});
+			$(".washType").each(function(index){
+				$(this).val(data.washType[index]).change();
+			});
+			
+			$(".sortableOrder li").each(function(){
+				num = parseInt($(this).attr("id").split("_")[1]);
+				if (data.sampleInclude[num] == 1){
+					$(this).addClass("ui-selected").css("border","1px solid rgb(255,100,0)");
+					$(this).find(".sortOrderCell").addClass("selectedOrderCell");
+				}
+				else{
+					$(this).removeClass("ui-selected").css("border","");
+					$(this).find(".sortOrderCell").removeClass("selectedOrderCell");
+				}
+			});
+			resortSortableOrder(data.sampleOrder);
+						
+		});
+		function isNumberKey(evt,id) {
+			var charCode = (evt.which) ? evt.which : event.keyCode;
+		        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
+				$('#'+id).css("background","rgb(255,0,0)");
+				setTimeout(function(){$('#'+id).css("background","rgb(255,255,255)")},200);
+				return false;
+			} else {
+				return true;
+			}      
+		};
+		
+		var selectorLists = {Type: ['Linear','Exponential','Table'],Positioner: Object.keys(positionerStruct)};
+		
+		function AutoCompleteEditor(args) {
+			var $input;
+			var defaultValue;
+			var scope = this;
+		        
+			this.init = function () {
+			  $input = $("<INPUT type=text class='editor-text'/>")
+			      .appendTo(args.container)
+			      .bind("keydown.nav", function (e) {
+				if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
+				  e.stopImmediatePropagation();
+				}
+			      })
+			      .autocomplete({minLength:0, source:selectorLists[args.item.rows]})
+			      .focus(function(){$(this).autocomplete('search', "")})
+			      .select();
+			};
+		    
+			this.destroy = function () {
+			  $input.remove();
+			};
+		    
+			this.focus = function () {
+			  $input.focus();
+			};
+		    
+			this.getValue = function () {
+			  return $input.val();
+			};
+		    
+			this.setValue = function (val) {
+			  $input.val(val);
+			};
+		    
+			this.loadValue = function (item) {
+			  defaultValue = item[args.column.field] || "";
+			  $input.val(defaultValue);
+			  $input[0].defaultValue = defaultValue;
+			  $input.select();
+			};
+		    
+			this.serializeValue = function () {
+			  return $input.val();
+			};
+		    
+			this.applyValue = function (item, state) {
+			  item[args.column.field] = state;
+			};
+		    
+			this.isValueChanged = function () {
+			  return (!($input.val() == "" && defaultValue == null)) && ($input.val() != defaultValue);
+			};
+		    
+			this.validate = function () {
+			  if (args.column.validator) {
+			    var validationResults = args.column.validator($input.val());
+			    if (!validationResults.valid) {
+			      return validationResults;
+			    }
+			  }
+		    
+			  return {
+			    valid: true,
+			    msg: null
+			  };
+			};
+		    
+			this.init();
+		};
+		
+		function FloatEditor(args) {
+			var $input;
+			var defaultValue;
+			var scope = this;
+		    
+			this.init = function () {
+			  $input = $("<INPUT type=text class='editor-text' />");
+		    
+			  $input.bind("keydown.nav", function (e) {
+			    if (e.keyCode === $.ui.keyCode.LEFT || e.keyCode === $.ui.keyCode.RIGHT) {
+			      e.stopImmediatePropagation();
+			    }
+			  });
+		    
+			  $input.appendTo(args.container);
+			  $input.focus().select();
+			};
+		    
+			this.destroy = function () {
+			  $input.remove();
+			};
+		    
+			this.focus = function () {
+			  $input.focus();
+			};
+		    
+			this.loadValue = function (item) {
+			  defaultValue = item[args.column.field];
+			  $input.val(defaultValue);
+			  $input[0].defaultValue = defaultValue;
+			  $input.select();
+			};
+		    
+			this.serializeValue = function () {
+			  return parseFloat($input.val(), 10) || 0;
+			};
+		    
+			this.applyValue = function (item, state) {
+			  item[args.column.field] = state;
+			};
+		    
+			this.isValueChanged = function () {
+			  return (!($input.val() == "" && defaultValue == null)) && ($input.val() != defaultValue);
+			};
+		    
+			this.validate = function () {
+			  if (isNaN($input.val())) {
+			    return {
+			      valid: false,
+			      msg: "Please enter a valid integer"
+			    };
+			  }
+		    
+			  return {
+			    valid: true,
+			    msg: null
+			  };
+			};		
+
+			this.init();
+		};
+		
+			
+		function harvestData(){
+			var posIndex;
+			var rowIndex;
+			var positioner = [];
+			var type = [];
+			var start = [];
+			var end = [];
+			var step = [];
+			var number;
+			
+			for (posIndex = 1; posIndex <= 3; ++posIndex) {
+				positioner.push(fillData[0]['position'+String(posIndex)]);
+				type.push(fillData[1]['position'+String(posIndex)]);
+				start.push(fillData[2]['position'+String(posIndex)]);
+				end.push(fillData[3]['position'+String(posIndex)]);
+				step.push(fillData[4]['position'+String(posIndex)]);
+			}
+			number = fillData[5]['position1'];
+						
+			var data = {};
+			data['scanname'] = globalscan;
+			data['positioners'] = positioner;
+			data['type'] = type;
+			data['start'] = start;
+			data['end'] = end;
+			data['step'] = step;
+			data['number'] = number;
+			
+			
+			return data;
+		};
+		
+		function saveScan(){
+			scanname = $("#scanname").val()
+			if (scanname == ''){
+				alert('No name given.');
+				return -1;
+			}
+			var filenames = $('#scanname').autocomplete( "option", "source");
+				if (filenames != null) {
+					if (filenames.indexOf(scanname)!=-1){
+					ok = confirm('Overwrite ' + scanname + '?');
+					if (ok == false){
+						return -1;
+					}
+				}
+			}
+			
+			globalscan = scanname;
+			
+			$("#qrimage").attr('src','/genericscan/qrcode/' + globalepn + '/' + scanname);
+			$("#qrimagelink").attr('href','/genericscan/qrcode/' + globalepn + '/' + scanname);
+				
+			socket.emit('save', harvestData());
+			return 0;
+		};
+		
+		$(function() {
+			
+			$(document).ready(function(){
+				var alphabet = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ").split("");
+			});
+			
+			$( "#save").click(function(){
+				if (saveScan() == -1){
+					alert('Scan not saved');
+				}
+			});
+			/*$("#load").click(function(){
+				globalplate = $("#platename").val()
+				socket.emit("load",globalepn,globalplate);
+			});
+			$("#run").click(function(){console.log( '{{test}}' )});
+			$("#runall").button().click(function(){
+				if (savePlate() == 0){
+				socket.emit("runall",globalepn, globalplate);
+				};
+			});
+			$("#runselected").button().click(function(){
+				if (savePlate() == 0){
+				socket.emit("runselected",globalepn, globalplate);
+				}
+			});
+			$("#stop").button().click(function(){
+				//socket.emit("stop");
+			});*/
+			$( "#radio" ).buttonset();
+			$( "#tab2tools").buttonset();
+			$( "#tab2btools").buttonset();
+			$( "#tabs" ).tabs({collapsible: true}).find( ".ui-tabs-nav" ).sortable({ axis: "x" });
+			
+			/*$("#scanplate").click(function(){
+				sampleNames = [];
+				sampleType = [];
+				sampleConc = [];
+				$("#save").focus();
+				$(".sampleName").each(function(index){
+					sampleNames.push($(this).val());
+				});
+				$(".sampleType").each(function(index){
+					sampleType.push($(this).val());
+				});
+				$(".sampleConc").each(function(index){
+					sampleConc.push($(this).val());
+				});
+				for (i=0;i<96;i++)
+				{
+					$("#sortOrderName_"+i).text(sampleNames[i]);
+					sampleTypeColour($("#sortOrder_"+i),sampleType[i]);
+					if (sampleType[i] == "1"){
+						sampleColour($("#sortOrder_"+i),sampleConc[i]);
+					};
+					if (sampleConc[i] > 0){
+						$("#sortOrderConc_"+i).text(sampleConc[i]);
+						$("#sortOrderConcUnit_"+i).text(" mg/ml");
+					};
+					
+				}
+			});*/
+			$("#scanname").autocomplete({minLength:0})
+				.focus(function(){$(this).autocomplete('search', $(this).val())});
+			$("#userepn").change(function(){
+				socket.emit('changeepn',$(this).val());
+			});
+		});
+		
+		function updatePosGridColumn(columnIDArray){
+			var rowNum;
+			var idNum;
+			
+			posGrid.invalidateAllRows();
+			
+			for (idNum = 0; idNum < columnIDArray.length; ++idNum ) {
+				columnID = columnIDArray[idNum];
+				type = fillData[1][columnID];
+				start = fillData[2][columnID];
+				end = fillData[3][columnID];
+				step = fillData[4][columnID];
+				number = fillData[5]["position1"];
+				
+				switch (type) {
+					case 'Linear' :
+						for (rowNum = 0; rowNum < number; rowNum++) {
+							value = (start + rowNum * (end-start)/(number-1)).toFixed(3);
+							if (isNaN(value)) {value = ''};
+							posData[rowNum][columnID] = value;
+						}
+						break;
+					case 'Exponential' :
+						prefactor = (end-start)/((number-1)*Math.pow(step,number-1));
+						for (rowNum = 0; rowNum < number; rowNum++) {
+							value = (start + prefactor*rowNum*Math.pow(step,rowNum)).toFixed(3);
+							if (isNaN(value)) {value = ''};
+							posData[rowNum][columnID] = value;
+						}
+						break;
+				}
+			}
+			posGrid.render();
+		}
+		
+		var fillGrid;
+		var fillColumns = [
+		  {id: "empty", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
+		  {id: "rows", name: "", field: "rows", width: 100},
+		  {id: "position1", name: "Position1", field: "position1", width: 100},
+		  {id: "position2", name: "Position2", field: "position2", width: 100},
+		  {id: "position3", name: "Position3", field: "position3", width: 100},
+		];
+		
+		var fillOptions = {
+		  editable: true,
+		  enableAddRow: false,
+		  enableCellNavigation: true,
+		  enableColumnReorder: false,
+		  asyncEditorLoading: false,
+		  autoEdit: true
+		};
+		
+		var fillData = [{rows:'Positioner'},{rows:'Type'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'}];
+		
+		$(function () {
+			
+			fillData.getItemMetadata = function (row) {
+				columns = {};
+				
+				if (row <= 1) {
+					columns = {
+						"position1": {
+							editor: AutoCompleteEditor
+						},
+						"position2": {
+							editor: AutoCompleteEditor
+						},
+						"position3": {
+							editor: AutoCompleteEditor
+						}
+					};
+				} else {
+					columns = {
+						"position1": {
+							editor: FloatEditor
+						},
+						"position2": {
+							editor: FloatEditor
+						},
+						"position3": {
+							editor: FloatEditor
+						}
+					};	
+				}
+				if (row == 5) {
+					columns["position1"]["colspan"] = 3;
+					columns["position1"]["editor"] = Slick.Editors.Integer;
+					
+				}
+				return { "columns": columns};
+			}
+		    			
+			fillGrid = new Slick.Grid("#fillGrid", fillData, fillColumns, fillOptions);
+			
+			fillGrid.addCellCssStyles('span',{5:{"position1": "centre-span"}});
+			
+			//Event Handlers
+			
+			fillGrid.onBeforeEditCell.subscribe(function(e,args){
+				if (args.row > 1 && args.row < 5){
+					if (fillData[1][args.column.id] == "Table"){
+						return false;
+					};
+				}
+				return true;
+			});
+			
+			fillGrid.onCellChange.subscribe(function(e,args){
+				var index
+				var columnIDs =[]
+				
+				for (index = 0; index < fillColumns.length; ++index) {
+					columnIDs.push(fillColumns[index].id);
+				}
+				
+				cellValue = args.item[columnIDs[args.cell]];
+				
+				if (args.item.rows != 'Positioner') {
+
+					if (args.item.rows == 'Type') {
+						if (cellValue == 'Table') {
+							(posColumns[args.cell])["editor"] = FloatEditor;
+						} else {
+							(posColumns[args.cell])["editor"] = null;
+						}
+					}
+				
+					if (args.item.rows == 'Number') {
+						index1 = 2;
+						index2 = 4;
+					} else {index1 = (index2 = args.cell)};
+					
+					for (index = index1; index <= index2; ++index) {
+						if (fillData[1][columnIDs[index]] == 'Linear'){
+							if (args.item.rows == 'Step' || (fillData[4][columnIDs[index]] != '' && fillData[3][columnIDs[index]] == '')) {
+								end = fillData[2][columnIDs[index]]+fillData[4][columnIDs[index]]*(fillData[5]['position1']-1);
+								if (!isNaN(end)) {
+									fillData[3][columnIDs[index]] = end.toFixed(3);
+								} else {
+									fillData[3][columnIDs[index]] = '';
+								}
+								fillGrid.invalidateRow(3);
+							} else {
+								step = (fillData[3][columnIDs[index]]-fillData[2][columnIDs[index]])/(fillData[5]['position1']-1);
+								if (!isNaN(step)) {
+									fillData[4][columnIDs[index]] = step.toFixed(3);
+								} else {
+									fillData[4][columnIDs[index]] = '';
+								}
+								fillGrid.invalidateRow(4);
+							}	
+						}	
+						fillGrid.render();
+					}
+					if (args.item.rows == 'Number'){
+						dataLength = posGrid.getDataLength();
+						if (cellValue < dataLength) {
+						posData.splice(cellValue,dataLength - cellValue);
+						}
+						for (index = 0; index < cellValue - dataLength; ++index) {
+							posData.splice(dataLength+index,0,{colNum : dataLength+index+1});
+							posGrid.invalidateRow(dataLength);
+						}
+						posGrid.updateRowCount();
+					}
+					updatePosGridColumn(columnIDs);
+				}
+			});
+		})
+
+		var posGrid;
+		var posColumns = [
+		  {id: "colNum", name: "", field: "colNum", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
+		  {id: "name", name: "Name", field: "name", width: 100, editor: Slick.Editors.Text},
+		  {id: "position1", name: "Position1", field: "position1", width: 100},
+		  {id: "position2", name: "Position2", field: "position2", width: 100},
+		  {id: "position3", name: "Position3", field: "position3", width: 100},
+		];
+	      
+		posColumns[0].header = {
+			buttons:[
+				{
+					cssClass: "icon-highlight-off",
+					command: "toggle-highlight",
+					tooltip: "Highlight negative numbers."
+				}
+			]
+		};
+	      
+		var posOptions = {
+		  editable: true,
+		  enableAddRow: true,
+		  enableCellNavigation: true,
+		  enableColumnReorder: false,
+		  asyncEditorLoading: false,
+		  autoEdit: true
+		};
+	      
+		var posData = [{colNum:1}];
+		
+		$(function () {
+			posGrid = new Slick.Grid("#positionGrid", posData, posColumns, posOptions);
+			posGrid.setSelectionModel(new Slick.CellSelectionModel());
+			
+			posGrid.onAddNewRow.subscribe(function (e, args) {
+				var item = args.item;
+				item["colNum"] = posData.length+1;
+				posGrid.invalidateRow(posData.length);
+				posData.push(item);
+				posGrid.updateRowCount();
+				posGrid.render();
+			});
+					
+		})
+		
+</script>
+</head>
+<body>
+
+<H1 id="epnTitle"></H1>
+<span id="topbar" class="ui-widget-header ui-corner-all">
+	<!--<label for="userepn">Username_EPN</label>
+	<input id="userepn"></input>	-->
+	<label for="scanname">Scan Name</label>
+	<input id="scanname"></input>
+	<button id="save">Save</button>
+	<button id="load">Load</button>
+	<button id="StopTop">Stop</button>
+</span>	
+<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
+
+<div class="genericscan" style="width:1550px">
+
+<div id="tabs">
+	<ul>
+		<li><a id="sampleplate" href="#tabs-1">Scan Setup</a></li>
+		<li><a id="scanplate" href="#tabs-2">Scan Run</a></li>
+	</ul>
+	
+	<div id="tabs-1" style="height:1200px">
+	
+		</br>
+				
+		<div id="fillGrid" style="width:430px;height:200px;clear:both;"></div>
+		<div id="positionGrid" style="width:430px;height:800px;clear:both;"></div>
+			
+	</div>
+	<div id="tabs-2" style="height:1500px">
+		
+		<div>
+			<button id="runall" class="run-button">Run All</button>
+			<button id="runselected" class="run-button">Run Selected</button>
+			<button id="stop" class="stop-button">Stop</button>
+		</div>
+		
+	</div>
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,2 @@
+from .secprofiles import secprofiles_app
+from .SECProfilesNamespace import SECProfilesNamespace

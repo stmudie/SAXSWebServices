@@ -29,10 +29,16 @@ class WellPlateNamespace(BaseNamespace):
         self.emit('loadlist',plates)
  
     def on_load(self, epn, plate):
-        data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
+        print 'on load'
+        redisData = r.get('well:' + epn + ':plate:' + plate)
+        if redisData != None:
+            data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
+        else :
+            data = ''
+        
         self.emit('platedata', epn, plate, data)
 
-    def run(self,epn,plate,type='all'):
+    def on_initialise(self,epn,plate,type='all'):
         data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
         if type == 'all':
             sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
@@ -40,6 +46,8 @@ class WellPlateNamespace(BaseNamespace):
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+            molarWeight = [float(data['sampleMW'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+        
         
         elif type == 'selected':
             sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
@@ -47,6 +55,8 @@ class WellPlateNamespace(BaseNamespace):
             types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
             concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
+            molarWeight = [float(data['sampleMW'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+    
     
         sampleNameString = "".join(sampleNames)
         sampleNameLen = [len(name) for name in sampleNames]
@@ -84,17 +94,23 @@ class WellPlateNamespace(BaseNamespace):
             result += caput(scanPV+'P'+str(1+posNum)+'PV', positioner[posNum])
             result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
             time.sleep(0.1)
-            result += caput(scanPV+'P'+str(1+posNum)+'PA', data[dictKey[posNum]])
+            result += caput(scanPV+'P'+str(1+posNum)+'PA',data[dictKey[posNum]])
             result += caput(scanPV+'NPTS', len(positions))
-        if result != 13 :
-            print "Something wrong setting " + str(13-result) + " some PVs. Continuing anyway."
+
+
+        if result != 15 :
+            print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
     
-        # Setup sample name and concentration positioners
+        # Setup sample name, concentration and molarWeight positioners
         result = 0
-        result += caput(basePV+'1:arrayValues', str(sampleNameString))
-        result += caput(basePV+'1:arrayIndices', sampleNameCoord)
-        result += caput(basePV+'2:arrayValues', concentration)
-        result += caput(basePV+'2:arrayIndices', range(len(positions))
+
+        result += caput(indexPV+'1:arrayValues', str(sampleNameString))
+        result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
+        result += caput(indexPV+'2:arrayValues', concentration)
+        result += caput(indexPV+'2:arrayIndices', range(len(positions)))
+        result += caput(indexPV+'3:arrayValues', molarWeight)
+        result += caput(indexPV+'3:arrayIndices', range(len(positions)))
+
         result += caput(scanPV+'P4SM', 0)
         result += caput(scanPV+'P4SP', 1)
         result += caput(scanPV+'P4EP', len(positions))
@@ -108,15 +124,19 @@ class WellPlateNamespace(BaseNamespace):
         # Setup detectors
         result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
         if result != 1 :
-            print "Something wrong setting some PVs. Continuing anyway."
-        
-        scanning = caput(basePV+'scan1.EXSC', 1)
+            print "Something wrong setting some PVs. Continuing anyway."        
+
+    def run(self):
+        scanPV = 'SR13ID01HU02IOC02:scan1.'
+        scanning = caput(scanPV+'EXSC', 1)
         
     def on_runall(self,epn,plate):
-        self.run(epn, plate, type = 'all')
+        self.on_initialise(epn, plate, type = 'all')
+        self.run()
 
     def on_runselected(self,epn,plate):
-        self.run(epn, plate, type = 'selected')
+        self.on_initialise(epn, plate, type = 'selected')
+        self.run()
 
     def recv_message(self, message):
         print "PING!!!", message
