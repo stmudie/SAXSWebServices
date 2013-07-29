@@ -381,6 +381,13 @@ socket.on('ErrorMessage', function(message){
 	
 });
 
+socket.on('File_List', function(filelist){
+	$("#filelistmenu li").remove();
+	for (var i=0; i<filelist.length; i++) {
+		$("#filelistmenu").append('<li id='+filelist[i]+' class="ui-menu-item"><a href="#">'+filelist[i].split('/').pop()+'</a></li>');
+	}
+});
+
 socket.on('Rg_Array', function(data) {
 	filename = data.filename;
 	Rg_Data = data.profile;
@@ -472,6 +479,18 @@ function setLinLog(chart, axis){
 	
 };
 
+function clearBuffer(){
+	HighBufSelect = (LowBufSelect = -1);
+	updateRectangle(highlightBufRec, highlightBufRecLabel, LowBufSelect, HighBufSelect);
+	highlightBufRecLabel.attr({visibility: 'hidden'});
+};
+
+function clearSample(){
+	HighSelect = (LowSelect = -1);
+	updateRectangle(highlightRec, highlightRecLabel, LowSelect, HighSelect);
+	highlightRecLabel.attr({visibility: 'hidden'});
+};
+
 $(function () {
 
 	var progressbar = $("#progressbar"),
@@ -535,9 +554,7 @@ $(function () {
 
 		$( '#ClearBuffer').button()
 			.click(function(){
-				HighBufSelect = (LowBufSelect = -1);
-				updateRectangle(highlightBufRec, highlightBufRecLabel, LowBufSelect, HighBufSelect);
-				highlightBufRecLabel.attr({visibility: 'hidden'});
+				clearBuffer()
 			});
 		
 		$( "#Average" ).button({disabled : false})
@@ -584,6 +601,14 @@ $(function () {
 			width: 500
 		});
 		
+		$("#filelistmenu").menu({
+			select: function(event, ui) {
+				clearBuffer();
+				clearSample();
+				socket.emit('LoadFile',event.currentTarget.id);
+			}
+		});
+		
 		$(".spinner").spinner({
 			spin: function( event, ui) {
 				$(this).trigger('allchanges');
@@ -623,7 +648,9 @@ $(function () {
 </div>
 
 <div class="inputFields" style="float: left; padding: 10px; border: 2px solid; background: #DADCEF; height: 1200px">
-
+	<h3> Files </h3>
+	<ul id="filelistmenu" style="overflow-y: scroll; overflow-x: hidden; height:100px">
+	</ul>
     <h3> Averaging </h3>
 	<label for="LowBufSpin">Low Buffer:</label>
 	<input id="LowBufSpin" class="spinner buffer" name="LowBufSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
