@@ -480,12 +480,16 @@ function setLinLog(chart, axis){
 };
 
 function clearBuffer(){
+	$('#LowBufSpin').val(-1);
+	$('#HighBufSpin').val(-1);
 	HighBufSelect = (LowBufSelect = -1);
 	updateRectangle(highlightBufRec, highlightBufRecLabel, LowBufSelect, HighBufSelect);
 	highlightBufRecLabel.attr({visibility: 'hidden'});
 };
 
 function clearSample(){
+	$('#LowSpin').val(-1);
+	$('#HighSpin').val(-1);
 	HighSelect = (LowSelect = -1);
 	updateRectangle(highlightRec, highlightRecLabel, LowSelect, HighSelect);
 	highlightRecLabel.attr({visibility: 'hidden'});
