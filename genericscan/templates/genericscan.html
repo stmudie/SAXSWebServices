@@ -22,6 +22,7 @@
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.cellrangedecorator.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.cellrangeselector.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.cellselectionmodel.js')}}"></script>
+	<script src="{{ url_for('genericscan.static', filename='slick.cellexternalcopymanager.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.formatters.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.editors.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.grid.js')}}"></script>
@@ -39,6 +40,20 @@
 	/* styles for slickgrid */
 	.centre-span {text-align: center;}
 	.num-column {border-right-color: silver; border-right-style: solid; background: #f5f5f5; color: gray; text-align: right; font-size: 10px;}
+	/*.blueRow {background: #B7F0FF;}*/
+	.slick-row.odd .TableColumn{background: #EAFAFF;}
+	.slick-row.even .TableColumn{background: #F7FDFF;}
+	.slick-row .TableColumn.selected{background: #D1F3FF; -webkit-transition: 0.5s background;}
+	.slick-row .TableColumn.selected.copied{background: #D1D1FF; -webkit-transition: 0.5s background;}
+	.slick-row.odd .LinearColumn{background: #FFEAEA;}
+	.slick-row.even .LinearColumn{background: #FFF7F7;}
+	.slick-row .LinearColumn.selected{background: #FFD1D1; -webkit-transition: 0.5s background;}
+	.slick-row .LinearColumn.selected.copied{background: #FFF3D1; -webkit-transition: 0.5s background;}
+	.slick-row.odd .ExponentialColumn{background: #EAFFEC;}
+	.slick-row.even .ExponentialColumn{background: #F7FFF8;}
+	.slick-row .ExponentialColumn.selected{background: #D1FFD6; -webkit-transition: 0.5s background;}
+	.slick-row .ExponentialColumn.selected.copied{background: #D1FFF8; -webkit-transition: 0.5s background;}
+	
 	
 	/*styles for the Run Order Tab*/
 	.sortableRowNamesOrder {list-style-type: none; float: left; margin: 0; margin-top: 10px; margin-right: 5px; padding: 0; width: 25px;}
@@ -305,16 +320,20 @@
 			var start = [];
 			var end = [];
 			var step = [];
-			var number;
+			var number = [];
 			
-			for (posIndex = 1; posIndex <= 3; ++posIndex) {
-				positioner.push(fillData[0]['position'+String(posIndex)]);
-				type.push(fillData[1]['position'+String(posIndex)]);
-				start.push(fillData[2]['position'+String(posIndex)]);
-				end.push(fillData[3]['position'+String(posIndex)]);
-				step.push(fillData[4]['position'+String(posIndex)]);
+			for (var loop = 0; loop <=2; ++loop) {
+				for (posIndex = 1; posIndex <= 3; ++posIndex) {
+					positioner.push((fillData[loop])[0]['position'+String(posIndex)]);
+					type.push((fillData[loop])[1]['position'+String(posIndex)]);
+					start.push((fillData[loop])[2]['position'+String(posIndex)]);
+					end.push((fillData[loop])[3]['position'+String(posIndex)]);
+					step.push((fillData[loop])[4]['position'+String(posIndex)]);
+				}
+				number.push = (fillData[loop])[5]['position1'];
 			}
-			number = fillData[5]['position1'];
+			
+			
 						
 			var data = {};
 			data['scanname'] = globalscan;
@@ -388,6 +407,26 @@
 			$( "#tab2btools").buttonset();
 			$( "#tabs" ).tabs({collapsible: true}).find( ".ui-tabs-nav" ).sortable({ axis: "x" });
 			
+			$( "#autoedit").click(function(){
+				if ($(this).is(':checked')){
+					for(var loop=0;loop<=2;loop++){
+						posGrid[loop].unregisterPlugin(copyManager[loop]);	
+						options = posGrid[loop].getOptions();
+						options.autoEdit = true;
+						posGrid[loop].setOptions(options);
+					};
+				} else {
+
+					for(var loop=0;loop<=2;loop++){
+						copyManager[loop] = (new Slick.CellExternalCopyManager());
+						posGrid[loop].registerPlugin(copyManager[loop]);
+						options = posGrid[loop].getOptions();
+						options.autoEdit = false;
+						posGrid[loop].setOptions(options);
+					};
+				};
+			});
+			
 			/*$("#scanplate").click(function(){
 				sampleNames = [];
 				sampleType = [];
@@ -423,26 +462,26 @@
 			});
 		});
 		
-		function updatePosGridColumn(columnIDArray){
+		function updatePosGridColumn(loop,columnIDArray){
 			var rowNum;
 			var idNum;
 			
-			posGrid.invalidateAllRows();
+			posGrid[loop].invalidateAllRows();
 			
 			for (idNum = 0; idNum < columnIDArray.length; ++idNum ) {
 				columnID = columnIDArray[idNum];
-				type = fillData[1][columnID];
-				start = fillData[2][columnID];
-				end = fillData[3][columnID];
-				step = fillData[4][columnID];
-				number = fillData[5]["position1"];
+				type = (fillData[loop])[1][columnID];
+				start = (fillData[loop])[2][columnID];
+				end = (fillData[loop])[3][columnID];
+				step = (fillData[loop])[4][columnID];
+				number = (fillData[loop])[5]["position1"];
 				
 				switch (type) {
 					case 'Linear' :
 						for (rowNum = 0; rowNum < number; rowNum++) {
 							value = (start + rowNum * (end-start)/(number-1)).toFixed(3);
 							if (isNaN(value)) {value = ''};
-							posData[rowNum][columnID] = value;
+							(posData[loop])[rowNum][columnID] = value;
 						}
 						break;
 					case 'Exponential' :
@@ -450,23 +489,68 @@
 						for (rowNum = 0; rowNum < number; rowNum++) {
 							value = (start + prefactor*rowNum*Math.pow(step,rowNum)).toFixed(3);
 							if (isNaN(value)) {value = ''};
-							posData[rowNum][columnID] = value;
+							(posData[loop])[rowNum][columnID] = value;
 						}
 						break;
 				}
 			}
-			posGrid.render();
+			posGrid[loop].render();
 		}
 		
-		var fillGrid;
-		var fillColumns = [
-		  {id: "empty", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
-		  {id: "rows", name: "", field: "rows", width: 100},
-		  {id: "position1", name: "Position1", field: "position1", width: 100},
-		  {id: "position2", name: "Position2", field: "position2", width: 100},
-		  {id: "position3", name: "Position3", field: "position3", width: 100},
-		];
+		function formatColumns(row) {
+			columns = {};
+				
+			if (row <= 1) {
+				columns = {
+					"position1": {
+						editor: AutoCompleteEditor
+					},
+					"position2": {
+						editor: AutoCompleteEditor
+					},
+					"position3": {
+						editor: AutoCompleteEditor
+					}
+				};
+			} else {
+				columns = {
+					"position1": {
+						editor: FloatEditor,
+					},
+					"position2": {
+						editor: FloatEditor
+					},
+					"position3": {
+						editor: FloatEditor
+					}
+				};
+			}
+			if (row == 5) {
+				columns["position1"]["colspan"] = 3;
+				columns["position1"]["editor"] = Slick.Editors.Integer;
+					
+			}
+			return { "columns": columns};
+		};
 		
+		var fillGrid = [];
+		var fillColumns = [];
+		var fillData = [];
+
+		for (var loop=0;loop<=2;loop++){	
+			fillColumns.push(
+				[{id: "empty", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
+				{id: "rows", name: "", field: "rows", width: 80},
+				{id: "position1", name: "Position1", field: "position1", width: 80},
+				{id: "position2", name: "Position2", field: "position2", width: 80},
+				{id: "position3", name: "Position3", field: "position3", width: 80}]
+			);
+			fillData.push(
+				[{rows:'Positioner'},{rows:'Type'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'}]
+			);
+		};
+		
+				
 		var fillOptions = {
 		  editable: true,
 		  enableAddRow: false,
@@ -476,142 +560,132 @@
 		  autoEdit: true
 		};
 		
-		var fillData = [{rows:'Positioner'},{rows:'Type'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'}];
-		
 		$(function () {
 			
-			fillData.getItemMetadata = function (row) {
-				columns = {};
-				
-				if (row <= 1) {
-					columns = {
-						"position1": {
-							editor: AutoCompleteEditor
-						},
-						"position2": {
-							editor: AutoCompleteEditor
-						},
-						"position3": {
-							editor: AutoCompleteEditor
-						}
-					};
-				} else {
-					columns = {
-						"position1": {
-							editor: FloatEditor
-						},
-						"position2": {
-							editor: FloatEditor
-						},
-						"position3": {
-							editor: FloatEditor
-						}
-					};	
-				}
-				if (row == 5) {
-					columns["position1"]["colspan"] = 3;
-					columns["position1"]["editor"] = Slick.Editors.Integer;
-					
-				}
-				return { "columns": columns};
-			}
-		    			
-			fillGrid = new Slick.Grid("#fillGrid", fillData, fillColumns, fillOptions);
+			for(var i=0;i<=2;i++){fillData[i].getItemMetadata = formatColumns};
+					    			
+			for (var loop=0;loop<=2;loop++) {
 			
-			fillGrid.addCellCssStyles('span',{5:{"position1": "centre-span"}});
-			
-			//Event Handlers
-			
-			fillGrid.onBeforeEditCell.subscribe(function(e,args){
-				if (args.row > 1 && args.row < 5){
-					if (fillData[1][args.column.id] == "Table"){
-						return false;
-					};
-				}
-				return true;
-			});
-			
-			fillGrid.onCellChange.subscribe(function(e,args){
-				var index
-				var columnIDs =[]
-				
-				for (index = 0; index < fillColumns.length; ++index) {
-					columnIDs.push(fillColumns[index].id);
-				}
-				
-				cellValue = args.item[columnIDs[args.cell]];
-				
-				if (args.item.rows != 'Positioner') {
 
-					if (args.item.rows == 'Type') {
-						if (cellValue == 'Table') {
-							(posColumns[args.cell])["editor"] = FloatEditor;
-						} else {
-							(posColumns[args.cell])["editor"] = null;
-						}
-					}
+				tempFillGrid = new Slick.Grid("#fillGrid"+String(loop+1), fillData[loop], fillColumns[loop], fillOptions);
 				
-					if (args.item.rows == 'Number') {
-						index1 = 2;
-						index2 = 4;
-					} else {index1 = (index2 = args.cell)};
+				tempFillGrid.addCellCssStyles('span',{5:{"position1": "centre-span"}});
+				
+				//Event Handlers
+				
+				tempFillGrid.onBeforeEditCell.subscribe(function(e,args){
+					data = args.grid.getData();
+					if (args.row > 1 && args.row < 5){
+						if (data[1][args.column.id] == "Table"){
+							return false;
+						};
+					}
+					return true;
+				});
+				
+				tempFillGrid.onCellChange.subscribe(function(e,args){
+					var index;
+					var columnIDs =[];
+					column = args.grid.getColumns();
+					data = args.grid.getData();
+					grid = args.grid;
+					loop = (args.grid.getContainerNode().id.slice(-1)-1);
 					
-					for (index = index1; index <= index2; ++index) {
-						if (fillData[1][columnIDs[index]] == 'Linear'){
-							if (args.item.rows == 'Step' || (fillData[4][columnIDs[index]] != '' && fillData[3][columnIDs[index]] == '')) {
-								end = fillData[2][columnIDs[index]]+fillData[4][columnIDs[index]]*(fillData[5]['position1']-1);
-								if (!isNaN(end)) {
-									fillData[3][columnIDs[index]] = end.toFixed(3);
-								} else {
-									fillData[3][columnIDs[index]] = '';
-								}
-								fillGrid.invalidateRow(3);
+					for (index = 0; index < column.length; ++index) {
+						columnIDs.push(column[index].id);
+					}
+					
+					cellValue = args.item[columnIDs[args.cell]];
+					
+					if (args.item.rows != 'Positioner') {
+	
+						if (args.item.rows == 'Type') {
+							if (cellValue == 'Table') {
+								((posColumns[loop])[args.cell])["editor"] = FloatEditor;
+								((posColumns[loop])[args.cell])["cssClass"] = "TableColumn";
 							} else {
-								step = (fillData[3][columnIDs[index]]-fillData[2][columnIDs[index]])/(fillData[5]['position1']-1);
-								if (!isNaN(step)) {
-									fillData[4][columnIDs[index]] = step.toFixed(3);
+								((posColumns[loop])[args.cell])["editor"] = null;
+								if (cellValue == 'Linear'){
+									((posColumns[loop])[args.cell])["cssClass"] = "LinearColumn";
 								} else {
-									fillData[4][columnIDs[index]] = '';
+									((posColumns[loop])[args.cell])["cssClass"] = "ExponentialColumn";
 								}
-								fillGrid.invalidateRow(4);
+							}
+						}
+					
+						if (args.item.rows == 'Number') {
+							index1 = 2;
+							index2 = 4;
+						} else {index1 = (index2 = args.cell)};
+						
+						for (index = index1; index <= index2; ++index) {
+							if (data[1][columnIDs[index]] == 'Linear'){
+								if (args.item.rows == 'Step' || (data[4][columnIDs[index]] != '' && data[3][columnIDs[index]] == '')) {
+									end = data[2][columnIDs[index]]+data[4][columnIDs[index]]*(data[5]['position1']-1);
+									if (!isNaN(end)) {
+										data[3][columnIDs[index]] = end.toFixed(3);
+									} else {
+										data[3][columnIDs[index]] = '';
+									}
+									(fillGrid[loop]).invalidateRow(3);
+								} else {
+									step = (data[3][columnIDs[index]]-data[2][columnIDs[index]])/(data[5]['position1']-1);
+									if (!isNaN(step)) {
+										data[4][columnIDs[index]] = step.toFixed(3);
+									} else {
+										data[4][columnIDs[index]] = '';
+									}
+									(grid).invalidateRow(4);
+								}	
 							}	
-						}	
-						fillGrid.render();
-					}
-					if (args.item.rows == 'Number'){
-						dataLength = posGrid.getDataLength();
-						if (cellValue < dataLength) {
-						posData.splice(cellValue,dataLength - cellValue);
+							(grid).render();
 						}
-						for (index = 0; index < cellValue - dataLength; ++index) {
-							posData.splice(dataLength+index,0,{colNum : dataLength+index+1});
-							posGrid.invalidateRow(dataLength);
+						if (args.item.rows == 'Number'){
+							dataLength = (posGrid[loop]).getDataLength();
+							if (cellValue < dataLength) {
+							(posData[loop]).splice(cellValue,dataLength - cellValue);
+							}
+							for (index = 0; index < cellValue - dataLength; ++index) {
+								(posData[loop]).splice(dataLength+index,0,{colNum : dataLength+index+1});
+								(posGrid[loop]).invalidateRow(dataLength);
+							}
+							(posGrid[loop]).updateRowCount();
 						}
-						posGrid.updateRowCount();
+						updatePosGridColumn(loop,columnIDs);
 					}
-					updatePosGridColumn(columnIDs);
-				}
-			});
+				});
+				fillGrid.push(tempFillGrid);
+			};
 		})
 
-		var posGrid;
-		var posColumns = [
-		  {id: "colNum", name: "", field: "colNum", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
-		  {id: "name", name: "Name", field: "name", width: 100, editor: Slick.Editors.Text},
-		  {id: "position1", name: "Position1", field: "position1", width: 100},
-		  {id: "position2", name: "Position2", field: "position2", width: 100},
-		  {id: "position3", name: "Position3", field: "position3", width: 100},
-		];
-	      
-		posColumns[0].header = {
-			buttons:[
-				{
-					cssClass: "icon-highlight-off",
-					command: "toggle-highlight",
-					tooltip: "Highlight negative numbers."
-				}
-			]
+		var copyManager = []; 
+		
+		
+		
+		var posGrid =[];
+		var posColumns = [];
+		var posData = [];
+		
+		for (var loop=0;loop<=2;loop++) {
+			posColumns.push(
+				[{id: "colNum", name: "", field: "colNum", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
+				{id: "name", name: "Name", field: "name", width: 80, editor: Slick.Editors.Text},
+				{id: "position1", name: "Position1", field: "position1", width: 80},
+				{id: "position2", name: "Position2", field: "position2", width: 80},
+				{id: "position3", name: "Position3", field: "position3", width: 80}]
+			);
+			(posColumns[loop])[0].header = {
+				buttons:[
+					{
+						cssClass: "icon-highlight-off",
+						command: "toggle-highlight",
+						tooltip: "Highlight negative numbers."
+					}
+				]
+			};
+			posData.push([{colNum:1}]);
 		};
+	      
 	      
 		var posOptions = {
 		  editable: true,
@@ -622,22 +696,23 @@
 		  autoEdit: true
 		};
 	      
-		var posData = [{colNum:1}];
-		
 		$(function () {
-			posGrid = new Slick.Grid("#positionGrid", posData, posColumns, posOptions);
-			posGrid.setSelectionModel(new Slick.CellSelectionModel());
-			
-			posGrid.onAddNewRow.subscribe(function (e, args) {
-				var item = args.item;
-				item["colNum"] = posData.length+1;
-				posGrid.invalidateRow(posData.length);
-				posData.push(item);
-				posGrid.updateRowCount();
-				posGrid.render();
-			});
-					
-		})
+			for (var loop=0;loop<=2;loop++) {
+				tempPosGrid = new Slick.Grid("#positionGrid"+String(loop+1), posData[loop], posColumns[loop], posOptions);
+				tempPosGrid.setSelectionModel(new Slick.CellSelectionModel());
+				
+				tempPosGrid.onAddNewRow.subscribe(function (e, args) {
+					var item = args.item;
+					item["colNum"] = posData.length+1;
+					(posGrid[loop]).invalidateRow((posData[loop]).length);
+					(posData[loop]).push(item);
+					(posGrid[loop]).updateRowCount();
+					(posGrid[loop]).render();
+				});
+				tempPosGrid.setSelectionModel(new Slick.CellSelectionModel());
+				posGrid.push(tempPosGrid);
+			};
+		});
 		
 </script>
 </head>
@@ -655,7 +730,7 @@
 </span>	
 <a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
 
-<div class="genericscan" style="width:1550px">
+<div class="genericscan" style="width:1155px">
 
 <div id="tabs">
 	<ul>
@@ -663,15 +738,28 @@
 		<li><a id="scanplate" href="#tabs-2">Scan Run</a></li>
 	</ul>
 	
-	<div id="tabs-1" style="height:1200px">
+	<div id="tabs-1" style="height:800px">
 	
-		</br>
-				
-		<div id="fillGrid" style="width:430px;height:200px;clear:both;"></div>
-		<div id="positionGrid" style="width:430px;height:800px;clear:both;"></div>
+		<input type="checkbox" id="autoedit" checked/><label for="autoedit">Autoedit - no click to enter text. In activates Copy/Paste.</label></br>
+		
+		<div style="float: left; padding-right:10px">
+			<h3>Loop 1</h3>		
+			<div id="fillGrid1" style="width:350px;height:200px;clear:both;"></div>
+			<div id="positionGrid1" style="width:365px;height:560px;clear:both;"></div>
+		</div>
+		<div style="float: left; padding-right:10px">
+			<h3>Loop 2</h3>		
+			<div id="fillGrid2" style="width:350px;height:200px;clear:both;"></div>
+			<div id="positionGrid2" style="width:365px;height:560px;clear:both;"></div>
+		</div>
+		<div style="float: left">
+			<h3>Loop 3</h3>		
+			<div id="fillGrid3" style="width:350px;height:200px;clear:both;"></div>
+			<div id="positionGrid3" style="width:365px;height:560px;clear:both;"></div>
+		</div>
 			
 	</div>
-	<div id="tabs-2" style="height:1500px">
+	<div id="tabs-2">
 		
 		<div>
 			<button id="runall" class="run-button">Run All</button>
