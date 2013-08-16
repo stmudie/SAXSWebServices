@@ -133,7 +133,7 @@
 				for (var posIndex = 1; posIndex <= 3; ++posIndex) {
 					index = loop*3 + posIndex-1;
 					
-					(fillData[loop])[0]['position'+String(posIndex)] = data.positioners[index];
+					(fillData[loop])[0]['position'+String(posIndex)] = data.positioners[index]['Name'];
 					(fillData[loop])[1]['position'+String(posIndex)] = data.type[index];
 					(fillData[loop])[2]['position'+String(posIndex)] = data.start[index];
 					(fillData[loop])[3]['position'+String(posIndex)] = data.end[index];
@@ -326,7 +326,8 @@
 				filenames.push(filenamesTemp);
 				
 				for (posIndex = 1; posIndex <= 3; ++posIndex) {
-					positioner.push((fillData[loop])[0]['position'+String(posIndex)]);
+					positionerTemp = (fillData[loop])[0]['position'+String(posIndex)]
+					positioner.push({Name: positionerTemp, PV: positionerStruct[positionerTemp]});
 					type.push((fillData[loop])[1]['position'+String(posIndex)]);
 					start.push((fillData[loop])[2]['position'+String(posIndex)]);
 					end.push((fillData[loop])[3]['position'+String(posIndex)]);
