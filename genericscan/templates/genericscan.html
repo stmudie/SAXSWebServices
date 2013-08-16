@@ -27,7 +27,8 @@
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.editors.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/slick.grid.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.headerbuttons.js')}}"></script>
-		
+	
+	<script src="{{ url_for('genericscan.static', filename='ext.overlays.js')}}"></script>
 	<script src="{{ url_for('genericscan.static', filename='positioners.js')}}"></script>
 		
 	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/slick.grid.css')}}" type="text/css"/>
@@ -35,6 +36,8 @@
 	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/examples/examples.css')}}" type="text/css"/>
 	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='SlickGrid/plugins/slick.headerbuttons.css')}}" type="text/css"/>
 	
+	<link rel="stylesheet" href="{{ url_for('genericscan.static', filename='filloverlay.css')}}" type="text/css"/>
+		
 	<style>
 	
 	/* styles for slickgrid */
@@ -53,20 +56,11 @@
 	.slick-row.even .ExponentialColumn{background: #F7FFF8;}
 	.slick-row .ExponentialColumn.selected{background: #D1FFD6; -webkit-transition: 0.5s background;}
 	.slick-row .ExponentialColumn.selected.copied{background: #D1FFF8; -webkit-transition: 0.5s background;}
+	.Delay .slick-cell{color: #949494; background: #EAE5F5;}
+	.Expanded.odd .slick-cell{color: #3F3F3F; background: #F9F7F4;}
+	.Expanded.even .slick-cell{color: #3F3F3F; background: #EFEDEA;}
 	
-	
-	/*styles for the Run Order Tab*/
-	.sortableRowNamesOrder {list-style-type: none; float: left; margin: 0; margin-top: 10px; margin-right: 5px; padding: 0; width: 25px;}
-	.sortableRowNamesOrder li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 20px; height: 40px; font-size: 1em; text-align: center;}
-	.sortableOrder { list-style-type: none; float: left; margin: 0; margin-top: 10px; padding: 0; width: 100px; }
-	.sortableOrder li { margin: 0px 0px 0px 0px; padding: 1px; float: left; width: 100px; height: 40px;  text-align: center; border-radius: 5px; }
-	.sortOrderCell {text-align: left; opacity: .5; font-size: 1.2em; padding-left : 5px; float: left;}
-	.selectedOrderCell {color: rgb(255,100,0);font-weight: bold; opacity: 1;}
-	.sortOrderName {font-weight: bold;text-align: center; word-break: break-word; display: inline-block;}
-	.sortOrderConc {font-size: 0.8em;}
-	.sortOrderConcUnit {font-size: 1em;}
-	.removeSelect {!important; border: hidden !important;}
-	.deselectbutton {width: 100px; margin-right:80px;}
+	/*styles for the Start Scan Tab*/
 	.stop-button {background: rgb(200,40,40) !important;color: rgb(240,240,240) !important;}
 	.stop-button:hover {background: rgb(180,40,40) !important;color: rgb(255,255,255) !important;}
 	.stop-button:active {background: rgb(255,0,0) !important;color: rgb(255,255,255) !important;}
@@ -78,22 +72,7 @@
 	#topbar {padding: 10px 5px;}
 	#runbar {padding: 10px 5px;}
 	#selecttools {margin-bottom: 5px; float:left;}
-	#sortableHead { list-style-type: none; float: left; margin: 0; padding: 0; width: 1450px; }
-	#sortableRowNames {list-style-type: none; float: left; margin: 0; margin-right: 55px; padding: 0; width: 50px;}
-	#sortable { list-style-type: none; float: left; margin: 0; padding: 0; width: 1350px; }
-	#sortableHead li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 45px; font-size: 4em; text-align: center;}
-	#sortableRowNames li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px; font-size: 4em; text-align: center;}
-	#sortable li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px;  text-align: center; border-radius: 10px;}
 	
-	.sampleName {display:block; margin-top:10px; margin-left: 5px; width:82px;}
-	.sampleConc {display:inline-block; margin-top: 0px; margin-left: 5px; margin-right: 0px; width:37px;}
-	.sampleMW{display:inline-block; margin-top: 0px; margin-left: 0px; margin-right: 8px; width:37px;}
-	
-	.ui-icon.white { background-image: url("{{ url_for('genericscan.static', filename='jquery/ui/css/images/ui-icons_ffffff_256x240.png')}}"); }
-
-	li .selecthandle { background: #ddddf5; position: relative; left: 0; top: 0; bottom: 0; padding:0px; }
-	.ui-selecting .selecthandle { background: pink; }
-	.ui-selected .selecthandle { background: pink; }
 	select {display: block; margin: 3px; font-size: x-small; width:90px;}
 	</style>
 	<script>
@@ -104,6 +83,7 @@
 		var socket = io.connect('/genericscan');
 		var globalepn;
 		var globalscan;
+		var globalscanlist;
 				
 		socket.on('connect', function(){
 			socket.emit('connect')
@@ -124,47 +104,58 @@
 		});
 		
 		socket.on('loadlist', function (list) {
-			//$( "#platename" ).autocomplete( "option", "source", list);
+			globalscanlist = list;
+			$( "#scanname" ).autocomplete( "option", "source", list);
 		});
 		
-		socket.on('platedata', function(epn,plate,data){
+		socket.on('scandata', function(epn,scan,data){
+			
+			var tableCount = 0;
 			
 			globalepn = epn;
-			globalplate = plate;
+			globalscan = scan;
 			
-			console.log('load:' + globalepn + " " + globalplate);
+			console.log('load:' + globalepn + " " + globalscan);
 			
-			$("#qrimage").attr('src','/genericscan/qrcode/' + epn + '/' + plate);
-			$("#qrimagelink").attr('href','/genericscan/qrcode/' + epn + '/' + plate);
+			$("#qrimage").attr('src','/genericscan/qrcode/' + epn + '/' + scan);
+			$("#qrimagelink").attr('href','/genericscan/qrcode/' + epn + '/' + scan);
 			
-			$(".sampleName").each(function(index){
-				$(this).val(data.sampleNames[index]).change();
-			});
-			$(".sampleType").each(function(index){
-				$(this).val(data.sampleType[index]).change();
-				//sampleTypeColour($(this.parentNode),data.sampleType[index]);
-			});
-			$(".sampleConc").each(function(index){
-				$(this).val(data.sampleConc[index]).change();
-				//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
-			});
-			$(".washType").each(function(index){
-				$(this).val(data.washType[index]).change();
-			});
 			
-			$(".sortableOrder li").each(function(){
-				num = parseInt($(this).attr("id").split("_")[1]);
-				if (data.sampleInclude[num] == 1){
-					$(this).addClass("ui-selected").css("border","1px solid rgb(255,100,0)");
-					$(this).find(".sortOrderCell").addClass("selectedOrderCell");
-				}
-				else{
-					$(this).removeClass("ui-selected").css("border","");
-					$(this).find(".sortOrderCell").removeClass("selectedOrderCell");
-				}
-			});
-			resortSortableOrder(data.sampleOrder);
-						
+			for (var loop = 0; loop <=2; ++loop) {
+				
+				fillGrid[loop].invalidateAllRows();
+				updateTableLength(posGrid[loop],data.number[loop]);
+				
+				for (var i=0; i<data.number[loop]; i++) {
+					posData[loop][i]['name'] = data.filenames[loop][i];
+				};
+				
+				for (var posIndex = 1; posIndex <= 3; ++posIndex) {
+					index = loop*3 + posIndex-1;
+					
+					(fillData[loop])[0]['position'+String(posIndex)] = data.positioners[index];
+					(fillData[loop])[1]['position'+String(posIndex)] = data.type[index];
+					(fillData[loop])[2]['position'+String(posIndex)] = data.start[index];
+					(fillData[loop])[3]['position'+String(posIndex)] = data.end[index];
+					(fillData[loop])[4]['position'+String(posIndex)] = data.step[index];
+					updatePosGridFormatting(posColumns[loop][posIndex+1],data.type[index]);
+					
+					if (data.type[index] == 'Table') {
+						for (var i=0; i<data.number[loop]; i++) {
+							posData[loop][i]['position'+String(posIndex)] = data.tableData[tableCount][i];
+						};
+						tableCount++;
+					};
+				};
+				(fillData[loop])[5]['position1'] = data.number[loop];
+				(fillData[loop])[6]['position1'] = data.delay[loop];
+				fillGrid[loop].render();
+				updatePosGridColumn(loop,['empty','rows','position1','position2','position3']);
+			};
+
+			
+
+
 		});
 		function isNumberKey(evt,id) {
 			var charCode = (evt.which) ? evt.which : event.keyCode;
@@ -176,6 +167,8 @@
 				return true;
 			}      
 		};
+		
+		var alphabet = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz").split("");
 		
 		var selectorLists = {Type: ['Linear','Exponential','Table'],Positioner: Object.keys(positionerStruct)};
 		
@@ -283,7 +276,7 @@
 			};
 		    
 			this.serializeValue = function () {
-			  return parseFloat($input.val(), 10) || 0;
+			  return parseFloat($input.val(), 10) || "";
 			};
 		    
 			this.applyValue = function (item, state) {
@@ -321,29 +314,47 @@
 			var end = [];
 			var step = [];
 			var number = [];
+			var delay = [];
+			var tableData = [];
+			var filenames = [];
 			
 			for (var loop = 0; loop <=2; ++loop) {
+				var filenamesTemp = [];
+				for (var row=0; row < posData[loop].length; row++) {
+					filenamesTemp.push(posData[loop][row]['name']);
+				};
+				filenames.push(filenamesTemp);
+				
 				for (posIndex = 1; posIndex <= 3; ++posIndex) {
 					positioner.push((fillData[loop])[0]['position'+String(posIndex)]);
 					type.push((fillData[loop])[1]['position'+String(posIndex)]);
 					start.push((fillData[loop])[2]['position'+String(posIndex)]);
 					end.push((fillData[loop])[3]['position'+String(posIndex)]);
 					step.push((fillData[loop])[4]['position'+String(posIndex)]);
-				}
-				number.push = (fillData[loop])[5]['position1'];
+					
+					if (type[type.length-1] == 'Table') {
+						var tableDataTemp = [];
+						for (var row=0; row < posData[loop].length; row++) {
+							tableDataTemp.push(posData[loop][row]['position'+String(posIndex)]);
+						};
+						tableData.push(tableDataTemp);
+					};
+				};
+				number.push((fillData[loop])[5]['position1']);
+				delay.push((fillData[loop])[6]['position1']);
 			}
 			
-			
-						
 			var data = {};
 			data['scanname'] = globalscan;
+			data['filenames'] = filenames;
 			data['positioners'] = positioner;
 			data['type'] = type;
 			data['start'] = start;
 			data['end'] = end;
 			data['step'] = step;
 			data['number'] = number;
-			
+			data['delay'] = delay;
+			data['tableData'] = tableData;
 			
 			return data;
 		};
@@ -373,35 +384,158 @@
 			return 0;
 		};
 		
-		$(function() {
+		function buildNames() {
+			expandedGrid.invalidateAllRows();
+
+			expandedLength = Math.max(posData[0].length,1)*Math.max(posData[1].length,1)*Math.max(posData[2].length,1) + 1;
 			
-			$(document).ready(function(){
-				var alphabet = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ").split("");
-			});
+			//dataLength = (expandedGrid).getDataLength();
+			(expandedData).splice(1,expandedData.length -1);
+			
+			for (index = 1; index < expandedLength; ++index) {
+				(expandedData).splice(index,0,{colNum : index});
+			}
+			
+			(expandedGrid).updateRowCount();
+
+			dataRow = expandedData[0];
+			
+			dataRow.position1 = fillData[0][0].position1;
+			dataRow.position2 = fillData[0][0].position2;
+			dataRow.position3 = fillData[0][0].position3;
+			dataRow.position4 = fillData[1][0].position1;
+			dataRow.position5 = fillData[1][0].position2;
+			dataRow.position6 = fillData[1][0].position3;
+			dataRow.position7 = fillData[2][0].position1;
+			dataRow.position8 = fillData[2][0].position2;
+			dataRow.position9 = fillData[2][0].position3;
+			
+			delay = [];
+			
+			for (var pos3=0;pos3<posData[2].length;pos3++){
+				for (var pos2=0;pos2<posData[1].length;pos2++){
+					for (var pos1=0;pos1<posData[0].length;pos1++){
+						
+						position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length;
+						
+						fragment1 = posData[0][pos1].name;
+						if (fragment1 == undefined) {fragment1=''};
+						fragment2 = posData[1][pos2].name;
+						if (fragment2 == undefined) {fragment2=''};
+						fragment3 = posData[2][pos3].name;
+						if (fragment3 == undefined) {fragment3=''};
+
+						dataRow = expandedData[position + 1];
+						
+						dataRow.name = fragment1 + fragment2 + fragment3;
+						
+						dataRow.position1 = posData[0][pos1].position1
+						dataRow.position2 = posData[0][pos1].position2
+						dataRow.position3 = posData[0][pos1].position3
+						
+						dataRow.position4 = posData[1][pos2].position1
+						dataRow.position5 = posData[1][pos2].position2
+						dataRow.position6 = posData[1][pos2].position3
+						
+						dataRow.position7 = posData[2][pos3].position1
+						dataRow.position8 = posData[2][pos3].position2
+						dataRow.position9 = posData[2][pos3].position3
+						
+						delayVal = [0,0,0];
+						
+						for (var loop=0; loop<3; loop++) {
+							if ((fillData[loop])[6]["position1"] == undefined) {
+								delayVal[loop] = 0;
+							} else {
+								delayVal[loop] = parseFloat("0"+(fillData[loop])[6]["position1"]);
+							};
+						};
+						
+						delay.push(delayVal[0] +
+							(((position+1) % posData[0].length) == 0)*delayVal[1] +
+							(((position+1) % (posData[0].length*posData[1].length)) == 0)*delayVal[2]);
+					};
+				};
+			};
+			for (var i=expandedLength-2; i>=0; i--) {
+				if (delay[i] > 0) {
+					(expandedData).splice(i+2,0,{colNum : 'D', name : 'Delay ' + delay[i] + '(s)'});
+				};
+			};
+			(expandedGrid).updateRowCount();
+			expandedGrid.render();
+		};
+		
+		function fillUpDown(e,args) {
+			var upDownColumn = args.grid.getColumns()[args.range.fromCell];
+			var upDownData = args.grid.getData();
+		  
+			// Ensure the column is editable
+			if (!upDownColumn.editor) {
+				return;
+			}
+		
+			var value1 = upDownData[args.range.fromRow][upDownColumn.field];
+			var value2 =  upDownData[args.range.fromRow+1][upDownColumn.field];
+		
+			var value1First = ''
+			var value2First = ' '
+			
+			if (typeof(value1) =="string") {
+				value1First = value1.slice(0,-1);
+				value1Last = value1.slice(-1);
+			};
+			
+			if (typeof(value2) =="string") {
+				value2First = value2.slice(0,-1);
+				value2Last = value2.slice(-1);
+			};
+		
+			if (typeof(value1) == "number" && typeof(value2) == "number") {
+				for (var i = args.range.fromRow + 1; i <= args.range.toRow; i++) {
+					upDownData[i][upDownColumn.field] = value1+i*(value2-value1);
+					args.grid.invalidateRow(i);
+				}
+			} else if (value1First == value2First) {
+				for (var i = args.range.fromRow + 1; i <= args.range.toRow; i++) {
+                                        if (!isNaN(parseInt(value1Last))) {
+						upDownData[i][upDownColumn.field] = value1First+(parseInt(value1Last)+i*(parseInt(value2Last)-parseInt(value1Last)));
+					} else {
+						upDownData[i][upDownColumn.field] = value1First+alphabet[alphabet.indexOf(value1Last)+i*(alphabet.indexOf(value2Last)-alphabet.indexOf(value1Last))];
+					}
+					args.grid.invalidateRow(i);
+				}
+			} else {
+				// Copy the value down
+				for (var i = args.range.fromRow + 1; i <= args.range.toRow; i++) {
+					upDownData[i][upDownColumn.field] = value1;
+					args.grid.invalidateRow(i);
+				}
+			}
+			args.grid.render();
+		}
+		
+		$(function() {
 			
 			$( "#save").click(function(){
 				if (saveScan() == -1){
 					alert('Scan not saved');
 				}
 			});
-			/*$("#load").click(function(){
-				globalplate = $("#platename").val()
-				socket.emit("load",globalepn,globalplate);
-			});
-			$("#run").click(function(){console.log( '{{test}}' )});
-			$("#runall").button().click(function(){
-				if (savePlate() == 0){
-				socket.emit("runall",globalepn, globalplate);
-				};
-			});
-			$("#runselected").button().click(function(){
-				if (savePlate() == 0){
-				socket.emit("runselected",globalepn, globalplate);
+			$("#load").click(function(){
+				if (globalscanlist.indexOf($("#scanname").val()) == -1) {
+					alert("Unknown scan");
+					return
 				}
+				globalscan = $("#scanname").val();
+				socket.emit("load",globalepn,globalscan);
+			});
+			$("#run").button().click(function(){
+				socket.emit("run",globalepn, globalscan);
 			});
 			$("#stop").button().click(function(){
-				//socket.emit("stop");
-			});*/
+				socket.emit("stop");
+			});
 			$( "#radio" ).buttonset();
 			$( "#tab2tools").buttonset();
 			$( "#tab2btools").buttonset();
@@ -427,40 +561,43 @@
 				};
 			});
 			
-			/*$("#scanplate").click(function(){
-				sampleNames = [];
-				sampleType = [];
-				sampleConc = [];
-				$("#save").focus();
-				$(".sampleName").each(function(index){
-					sampleNames.push($(this).val());
-				});
-				$(".sampleType").each(function(index){
-					sampleType.push($(this).val());
-				});
-				$(".sampleConc").each(function(index){
-					sampleConc.push($(this).val());
-				});
-				for (i=0;i<96;i++)
-				{
-					$("#sortOrderName_"+i).text(sampleNames[i]);
-					sampleTypeColour($("#sortOrder_"+i),sampleType[i]);
-					if (sampleType[i] == "1"){
-						sampleColour($("#sortOrder_"+i),sampleConc[i]);
-					};
-					if (sampleConc[i] > 0){
-						$("#sortOrderConc_"+i).text(sampleConc[i]);
-						$("#sortOrderConcUnit_"+i).text(" mg/ml");
-					};
-					
-				}
-			});*/
+			$("#scanrun").click(function(){
+				buildNames();
+			});
 			$("#scanname").autocomplete({minLength:0})
 				.focus(function(){$(this).autocomplete('search', $(this).val())});
 			$("#userepn").change(function(){
 				socket.emit('changeepn',$(this).val());
 			});
 		});
+		
+		function updatePosGridFormatting(column,type) {
+			if (type == 'Table') {
+				column["editor"] = FloatEditor;
+				column["cssClass"] = "TableColumn";
+			} else {
+				(column)["editor"] = null;
+				if (type == 'Linear'){
+					column["cssClass"] = "LinearColumn";
+				} else {
+					column["cssClass"] = "ExponentialColumn";
+				};
+			};
+		}
+		
+		function updateTableLength(grid,length) {
+			
+			data = grid.getData();
+			dataLength = grid.getDataLength();
+			if (length < dataLength) {
+			data.splice(length,dataLength - length);
+			}
+			for (index = 0; index < length - dataLength; ++index) {
+				data.splice(dataLength+index,0,{colNum : dataLength+index+1});
+				grid.invalidateRow(dataLength);
+			}
+			grid.updateRowCount();
+		}
 		
 		function updatePosGridColumn(loop,columnIDArray){
 			var rowNum;
@@ -497,6 +634,19 @@
 			posGrid[loop].render();
 		}
 		
+		function formatExpandedColumns(row) {
+			if (row >= expandedData.length) {
+				return {};
+			}
+			if (expandedData[row].colNum == "D") {
+				return {"cssClasses": "Delay"};
+			} else {
+				return {"cssClasses": "Expanded"};
+			};
+			
+			return {};
+		}
+		
 		function formatColumns(row) {
 			columns = {};
 				
@@ -530,8 +680,15 @@
 				columns["position1"]["editor"] = Slick.Editors.Integer;
 					
 			}
+			if (row == 6) {
+				columns["position1"]["colspan"] = 3;
+				columns["position1"]["editor"] = FloatEditor;
+					
+			}
 			return { "columns": columns};
 		};
+		
+		var copyManager = [];
 		
 		var fillGrid = [];
 		var fillColumns = [];
@@ -546,7 +703,7 @@
 				{id: "position3", name: "Position3", field: "position3", width: 80}]
 			);
 			fillData.push(
-				[{rows:'Positioner'},{rows:'Type'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'}]
+				[{rows:'Positioner'},{rows:'Type'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'},{rows:'Delay (s)'}]
 			);
 		};
 		
@@ -561,7 +718,7 @@
 		};
 		
 		$(function () {
-			
+			expandedData.getItemMetadata = formatExpandedColumns;
 			for(var i=0;i<=2;i++){fillData[i].getItemMetadata = formatColumns};
 					    			
 			for (var loop=0;loop<=2;loop++) {
@@ -569,7 +726,7 @@
 
 				tempFillGrid = new Slick.Grid("#fillGrid"+String(loop+1), fillData[loop], fillColumns[loop], fillOptions);
 				
-				tempFillGrid.addCellCssStyles('span',{5:{"position1": "centre-span"}});
+				tempFillGrid.addCellCssStyles('span',{5:{"position1": "centre-span"}, 6:{"position1": "centre-span"}});
 				
 				//Event Handlers
 				
@@ -598,20 +755,10 @@
 					cellValue = args.item[columnIDs[args.cell]];
 					
 					if (args.item.rows != 'Positioner') {
-	
+						
 						if (args.item.rows == 'Type') {
-							if (cellValue == 'Table') {
-								((posColumns[loop])[args.cell])["editor"] = FloatEditor;
-								((posColumns[loop])[args.cell])["cssClass"] = "TableColumn";
-							} else {
-								((posColumns[loop])[args.cell])["editor"] = null;
-								if (cellValue == 'Linear'){
-									((posColumns[loop])[args.cell])["cssClass"] = "LinearColumn";
-								} else {
-									((posColumns[loop])[args.cell])["cssClass"] = "ExponentialColumn";
-								}
-							}
-						}
+							updatePosGridFormatting((posColumns[loop])[args.cell], cellValue);
+						};
 					
 						if (args.item.rows == 'Number') {
 							index1 = 2;
@@ -641,15 +788,7 @@
 							(grid).render();
 						}
 						if (args.item.rows == 'Number'){
-							dataLength = (posGrid[loop]).getDataLength();
-							if (cellValue < dataLength) {
-							(posData[loop]).splice(cellValue,dataLength - cellValue);
-							}
-							for (index = 0; index < cellValue - dataLength; ++index) {
-								(posData[loop]).splice(dataLength+index,0,{colNum : dataLength+index+1});
-								(posGrid[loop]).invalidateRow(dataLength);
-							}
-							(posGrid[loop]).updateRowCount();
+							updateTableLength(posGrid[loop],cellValue);
 						}
 						updatePosGridColumn(loop,columnIDs);
 					}
@@ -658,10 +797,6 @@
 			};
 		})
 
-		var copyManager = []; 
-		
-		
-		
 		var posGrid =[];
 		var posColumns = [];
 		var posData = [];
@@ -669,7 +804,7 @@
 		for (var loop=0;loop<=2;loop++) {
 			posColumns.push(
 				[{id: "colNum", name: "", field: "colNum", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
-				{id: "name", name: "Name", field: "name", width: 80, editor: Slick.Editors.Text},
+				{id: "name", name: "Filename", field: "name", width: 80, editor: Slick.Editors.Text},
 				{id: "position1", name: "Position1", field: "position1", width: 80},
 				{id: "position2", name: "Position2", field: "position2", width: 80},
 				{id: "position3", name: "Position3", field: "position3", width: 80}]
@@ -696,6 +831,9 @@
 		  autoEdit: true
 		};
 	      
+	      
+		var overlayPlugin = [];
+
 		$(function () {
 			for (var loop=0;loop<=2;loop++) {
 				tempPosGrid = new Slick.Grid("#positionGrid"+String(loop+1), posData[loop], posColumns[loop], posOptions);
@@ -710,11 +848,63 @@
 					(posGrid[loop]).render();
 				});
 				tempPosGrid.setSelectionModel(new Slick.CellSelectionModel());
+				overlayPlugin.push(new Ext.Plugins.Overlays({}));
+				tempPosGrid.registerPlugin(overlayPlugin[loop]);
+				overlayPlugin[loop].onFillUpDown.subscribe(fillUpDown);
 				posGrid.push(tempPosGrid);
 			};
 		});
 		
-</script>
+		var expandedGrid;
+		var expandedColumns;
+		var expandedData;
+
+		expandedColumns =
+			[{id: "colNum", name: "", field: "colNum", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
+			{id: "name", name: "Filename", field: "name", width: 120, editor: Slick.Editors.Text},
+			{id: "position1", name: "Position1", field: "position1", width: 100},
+			{id: "position2", name: "Position2", field: "position2", width: 100},
+			{id: "position3", name: "Position3", field: "position3", width: 100},
+			{id: "position4", name: "Position4", field: "position4", width: 100},
+			{id: "position5", name: "Position5", field: "position5", width: 100},
+			{id: "position6", name: "Position6", field: "position6", width: 100},
+			{id: "position7", name: "Position7", field: "position7", width: 100},
+			{id: "position8", name: "Position8", field: "position8", width: 100},
+			{id: "position9", name: "Position9", field: "position9", width: 100}
+		];
+		
+		expandedColumns[0].header = {
+			buttons:[{
+				cssClass: "icon-highlight-off",
+				command: "toggle-highlight",
+				tooltip: "Highlight negative numbers."
+			}]
+		};
+		
+		expandedData = [{colNum: 0}];
+		
+		var expandedOptions = {
+		  editable: true,
+		  enableAddRow: true,
+		  enableCellNavigation: true,
+		  enableColumnReorder: false,
+		  asyncEditorLoading: false,
+		  autoEdit: true
+		};
+		
+		$(function () {
+			expandedGrid = new Slick.Grid("#expandedGrid", expandedData, expandedColumns, expandedOptions);
+			expandedGrid.onAddNewRow.subscribe(function (e, args) {
+					var item = args.item;
+					item["colNum"] = expandedData.length+1;
+					(expandedGrid[loop]).invalidateRow((expandedData[loop]).length);
+					(expandedGrid[loop]).push(item);
+					(expandedGrid[loop]).updateRowCount();
+					(expandedGrid[loop]).render();
+			});
+		});
+		
+	</script>
 </head>
 <body>
 
@@ -734,8 +924,8 @@
 
 <div id="tabs">
 	<ul>
-		<li><a id="sampleplate" href="#tabs-1">Scan Setup</a></li>
-		<li><a id="scanplate" href="#tabs-2">Scan Run</a></li>
+		<li><a id="scansetup" href="#tabs-1">Scan Setup</a></li>
+		<li><a id="scanrun" href="#tabs-2">Start Scan</a></li>
 	</ul>
 	
 	<div id="tabs-1" style="height:800px">
@@ -744,28 +934,29 @@
 		
 		<div style="float: left; padding-right:10px">
 			<h3>Loop 1</h3>		
-			<div id="fillGrid1" style="width:350px;height:200px;clear:both;"></div>
-			<div id="positionGrid1" style="width:365px;height:560px;clear:both;"></div>
+			<div id="fillGrid1" style="width:350px;height:220px;clear:both;"></div>
+			<div id="positionGrid1" style="width:365px;height:540px;clear:both;"></div>
 		</div>
 		<div style="float: left; padding-right:10px">
 			<h3>Loop 2</h3>		
-			<div id="fillGrid2" style="width:350px;height:200px;clear:both;"></div>
-			<div id="positionGrid2" style="width:365px;height:560px;clear:both;"></div>
+			<div id="fillGrid2" style="width:350px;height:220px;clear:both;"></div>
+			<div id="positionGrid2" style="width:365px;height:540px;clear:both;"></div>
 		</div>
 		<div style="float: left">
 			<h3>Loop 3</h3>		
-			<div id="fillGrid3" style="width:350px;height:200px;clear:both;"></div>
-			<div id="positionGrid3" style="width:365px;height:560px;clear:both;"></div>
+			<div id="fillGrid3" style="width:350px;height:220px;clear:both;"></div>
+			<div id="positionGrid3" style="width:365px;height:540px;clear:both;"></div>
 		</div>
 			
 	</div>
-	<div id="tabs-2">
+	<div id="tabs-2" >
 		
 		<div>
-			<button id="runall" class="run-button">Run All</button>
-			<button id="runselected" class="run-button">Run Selected</button>
-			<button id="stop" class="stop-button">Stop</button>
+			<button id="run" class="run-button">Run Scan</button>
+			<button id="stop" class="stop-button">Stop Scan</button>
 		</div>
+		
+		<div id="expandedGrid" style="width:1050px;height:800px;clear:both;"></div>
 		
 	</div>
 </div>

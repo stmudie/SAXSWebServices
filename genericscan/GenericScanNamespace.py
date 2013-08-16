@@ -6,6 +6,12 @@ import time
 
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
+def xstr(s):
+    if s is None:
+        return ''
+    else:
+        return s
+
 class GenericScanNamespace(BaseNamespace):
     def on_connect(self):
         print 'connect'
@@ -38,91 +44,117 @@ class GenericScanNamespace(BaseNamespace):
         
         self.emit('scandata', epn, scan, data)
 
-    def run(self,epn,plate,type='all'):
-        data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
-        if type == 'all':
-            sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
-            positions = [1+int(order) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
-            types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
-            washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
-            concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
+    def run(self,epn,scan,type='all'):
+        filenames = []
         
-        elif type == 'selected':
-            sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
-            positions = [1+int(order) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
-            types = [int(data['sampleType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
-            washes = [int(data['washType'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
-            concentration = [float(data['sampleConc'][int(order)]) for order in data['sampleOrder'] if data['sampleInclude'][int(order)] == 1 and data['sampleNames'][int(order)] != ""]
-    
-        sampleNameString = "".join(sampleNames)
-        sampleNameLen = [len(name) for name in sampleNames]
-        sampleNameCoord = []
-        sampleNameCoord.append(0) 
-        for i in range(1,len(sampleNameLen)+1):
-            sampleNameCoord.append(sampleNameLen[i-1]+sampleNameCoord[i-1])
-    
-        print len(sampleNameCoord)
-
+        data = pickle.loads(r.get('generic:' + epn + ':scan:' + scan))
+        
+        for pos3 in range(0,data['number'][2]):
+            for pos2 in range(0,data['number'][1]):
+                for pos1 in range(0,data['number'][0]):
+                    #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
+                    filenames.append(xstr(data['filenames'][0][pos1]) + xstr(data['filenames'][1][pos2]) + xstr(data['filenames'][2][pos3]))
+                    
+        filenameString = "".join(filenamess)
+        filenameLen = [len(name) for name in filenames]
+        
         indexPV = "13INDEXARRAY:array"
-
+        
         # Setup global scan record parameters
-        scanPV = 'SR13ID01HU02IOC02:scan1.'
-        result = 0
-        result += caput(indexPV + ':arrayIndex1',0)
-        result += caput(scanPV+'CMND',6)
-        result += caput(scanPV+'BSPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
-        result += caput(scanPV+'BSCD',0)
-        result += caput(scanPV+'ASPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
-        result += caput(scanPV+'ASCD',1)
-        result += caput(scanPV+'D01PV','SR13ID01SYR01:FULL_SEL_SQ.VAL')
-        result += caput(scanPV+'PDLY',2)
-        result += caput(scanPV+'DDLY',5)
-        if result != 9 :
-            print "Something wrong setting " + str(9-result) + " PVs. Continuing anyway."
+        IOCPV = 'SR13ID01HU02IOC02:'
         
-        # Setup positioners for proteins
-        result = 0
-        positioner = ['SR13ID01SYR01:SMPL_RAW_COORD','SR13ID01SYR01:WASH_TYPE','SR13ID01HU02IOC04:SMPL_TYPE']
-        dictKey = ['COORD','WASH','TYPE']
-        data = {'COORD': positions, 'WASH': washes, 'TYPE': types}
-        for posNum in range(3):
-            result += caput(scanPV+'R'+str(1+posNum)+'PV', positioner[posNum])
-            result += caput(scanPV+'P'+str(1+posNum)+'PV', positioner[posNum])
-            result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
-            time.sleep(0.1)
-            result += caput(scanPV+'P'+str(1+posNum)+'PA', data[dictKey[posNum]])
-            result += caput(scanPV+'NPTS', len(positions))
-        if result != 13 :
-            print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
-    
-        # Setup sample name and concentration positioners
-        result = 0
-        result += caput(indexPV+'1:arrayValues', str(sampleNameString))
-        result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
-        result += caput(indexPV+'2:arrayValues', concentration)
-        result += caput(indexPV+'2:arrayIndices', range(len(positions)))
-        result += caput(scanPV+'P4SM', 0)
-        result += caput(scanPV+'P4SP', 0)
-        result += caput(scanPV+'P4EP', len(positions)-1)
-        result += caput(scanPV+'R4PV', indexPV + ':arrayIndex1')
-        result += caput(scanPV+'P4PV', indexPV + ':arrayIndex1')
-        result += caput(indexPV+':arrayIndex2',0)
-        result += caput(indexPV+':arrayIndex3',0)
-        if result != 11 :
-            print "Something wrong setting some PVs. Continuing anyway."
- 
-        # Setup detectors
-        result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
-        if result != 1 :
-            print "Something wrong setting some PVs. Continuing anyway."
         
-        scanning = caput(scanPV+'EXSC', 1)
+        result = 0
+        tableCount = 0
         
-    def on_runall(self,epn,plate):
-        self.run(epn, plate, type = 'all')
+        for loop in range(1,4):
+            scanPV = 'SR13ID01HU02IOC02:scan%d.' % (loop,)
+            #Clear SCAN
+            result += caput(scanPV+'CMND',3)
+            result += caput(scanPV+'PDLY',0)
+            #Detector Triggers
+            if loop == 1 :
+                result += caput(scanPV+'T1PV','13PIL1:cam1:Acquire')
+            else :
+                result += caput(scanPV+'T1PV','SR13ID01HU02IOC02:scan%d.EXSC' % (loop-1,))
+            
+            for posNum in range(0,3) :
+                absPos = loop*3+posNum
+                start = data['start'][absPos]
+                end = data['end'][absPos]
+                number = data['number'][absPos]
+                scantype = data['type'][absPos]
+                
+                result += caput(scanPV+'R'+str(1+posNum)+'PV', data['positioners'][absPos])
+                result += caput(scanPV+'P'+str(1+posNum)+'PV', data['positioners'][absPos])
+                
+                if scantype == 'Linear':
+                    result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
+                    result += caput(scanPV+'P'+str(1+posNum)+'SP', start)
+                    result += caput(scanPV+'P'+str(1+posNum)+'EP', end)
+                    result += caput(scanPV+'P'+str(1+posNum)+'NPTS', number)
+                
+                elif scantype == 'Exponential' :
+                    prefactor = (end-start)/((number-1)*(step**(number-1)));
+                    array = [start + prefactor*i*(step**i) for i in range(number)]
+                    result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
+                    result += caput(scanPV+'P'+str(1+posNum)+'PA', array)
+                
+                elif scantype == 'Table' :
+                    result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
+                    result += caput(scanPV+'P'+str(1+posNum)+'PA', data['table'][tableCount])
+                    tableCount = tableCount + 1
+                    
+                else:
+                    pass  
 
-    def on_runselected(self,epn,plate):
-        self.run(epn, plate, type = 'selected')
+        result += caput(indexPV + ':arrayIndex1',0)
+        
+        
+        
+        #if result != 9 :
+        #    print "Something wrong setting " + str(9-result) + " PVs. Continuing anyway."
+        #
+        # Setup positioners for proteins
+        #result = 0
+        #positioner = ['SR13ID01SYR01:SMPL_RAW_COORD','SR13ID01SYR01:WASH_TYPE','SR13ID01HU02IOC04:SMPL_TYPE']
+        #dictKey = ['COORD','WASH','TYPE']
+        #data = {'COORD': positions, 'WASH': washes, 'TYPE': types}
+        #for posNum in range(3):
+        #    result += caput(scanPV+'R'+str(1+posNum)+'PV', positioner[posNum])
+        #    result += caput(scanPV+'P'+str(1+posNum)+'PV', positioner[posNum])
+        #    result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
+        #    time.sleep(0.1)
+        #    result += caput(scanPV+'P'+str(1+posNum)+'PA', data[dictKey[posNum]])
+        #    result += caput(scanPV+'NPTS', len(positions))
+        #if result != 13 :
+        #    print "Something wrong setting " + str(15-result) + " some PVs. Continuing anyway."
+        #
+        # Setup sample name and concentration positioners
+        #result = 0
+        #result += caput(indexPV+'1:arrayValues', str(sampleNameString))
+        #result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
+        #result += caput(indexPV+'2:arrayValues', concentration)
+        #result += caput(indexPV+'2:arrayIndices', range(len(positions)))
+        #result += caput(scanPV+'P4SM', 0)
+        #result += caput(scanPV+'P4SP', 0)
+        #result += caput(scanPV+'P4EP', len(positions)-1)
+        #result += caput(scanPV+'R4PV', indexPV + ':arrayIndex1')
+        #result += caput(scanPV+'P4PV', indexPV + ':arrayIndex1')
+        #result += caput(indexPV+':arrayIndex2',0)
+        #result += caput(indexPV+':arrayIndex3',0)
+        #if result != 11 :
+        #    print "Something wrong setting some PVs. Continuing anyway."
+        #
+        # Setup detectors
+        #result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
+        #if result != 1 :
+        #    print "Something wrong setting some PVs. Continuing anyway."
+        #
+        #scanning = caput(scanPV+'EXSC', 1)
+        
+    def on_run(self,epn,plate):
+        self.run(epn, plate)
 
     def recv_message(self, message):
         print "PING!!!", message

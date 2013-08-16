@@ -1,0 +1,37 @@
+.slick-header-menuitem:hover
+{
+    border-color: #BFBDBD;
+}
+
+.header-overlay, .cell-overlay, .selection-cell-overlay
+{
+
+    display: block;
+    position: absolute;
+    z-index: 999;
+}
+.slick-cell {
+    border-color: transparent #D4D4D4 #D4D4D4 transparent;
+    border-style: solid solid solid solid;
+    border-width: 0px 1px 1px 0px;
+    padding: 1px 1px 0px 2px;
+    background-color: White;
+    /*font: 11pt Calibri, 'Segoe UI',Arial,Verdana,Sans-Serif;*/
+}
+.cell-overlay, .selection-cell-overlay {
+    background-color: #217346;
+}
+.handle-overlay {
+    border: 1px solid white;
+    padding: 2px;
+    background-color: #217346;
+    position: absolute;
+    width: 1px;
+    z-index: 1000;
+    cursor: crosshair;
+}
+
+.overlay-handle-decorator {
+    border: 2px solid #217346;
+    z-index: 1000;
+}
