@@ -79,6 +79,18 @@
 		WEB_SOCKET_SWF_LOCATION = "{{ url_for('genericscan.static', filename='WebSocketMain.swf')}}";
 		WEB_SOCKET_DEBUG = true;
 		
+		function setUnload(on) {
+			window.onbeforeunload = (on) ? confirmOnPageExit : null;
+		}
+		
+		function confirmOnPageExit(e) {
+			var message = "You are attempting to navigate away from, or reload, the Generic Scan GUI with unsaved changes. You will lose these changes if you continue.";
+			
+			(e || window.event).returnValue = message;     //Gecko + IE
+			return message;                                //Webkit, Safari, Chrome etc.
+			
+		}
+		
 		// socket.io specific code
 		var socket = io.connect('/genericscan');
 		var globalepn;
@@ -126,10 +138,14 @@
 				fillGrid[loop].invalidateAllRows();
 				updateTableLength(posGrid[loop],data.number[loop]);
 				
-				for (var i=0; i<data.number[loop]; i++) {
-					posData[loop][i]['name'] = data.filenames[loop][i];
+				if (data.number[loop] == 0 || data.number[loop] == null) {
+					posData[loop] = [{colNum:1}];
+				} else {
+					for (var i=0; i<data.number[loop]; i++) {
+						posData[loop][i]['name'] = data.filenames[loop][i];
+					};
 				};
-				
+					
 				for (var posIndex = 1; posIndex <= 3; ++posIndex) {
 					index = loop*3 + posIndex-1;
 					
@@ -363,7 +379,7 @@
 		function saveScan(){
 			scanname = $("#scanname").val()
 			if (scanname == ''){
-				alert('No name given.');
+				alert('No Scan Name given. Please Enter Name.');
 				return -1;
 			}
 			var filenames = $('#scanname').autocomplete( "option", "source");
@@ -382,6 +398,10 @@
 			$("#qrimagelink").attr('href','/genericscan/qrcode/' + globalepn + '/' + scanname);
 				
 			socket.emit('save', harvestData());
+			
+			//Save, turn off unload warning
+			setUnload(false);
+			
 			return 0;
 		};
 		
@@ -532,7 +552,9 @@
 				socket.emit("load",globalepn,globalscan);
 			});
 			$("#run").button().click(function(){
-				socket.emit("run",globalepn, globalscan);
+				if (saveScan() != -1) {
+					socket.emit("run",globalepn, globalscan);
+				}
 			});
 			$("#stop").button().click(function(){
 				socket.emit("stop");
@@ -719,6 +741,7 @@
 		};
 		
 		$(function () {
+			
 			expandedData.getItemMetadata = formatExpandedColumns;
 			for(var i=0;i<=2;i++){fillData[i].getItemMetadata = formatColumns};
 					    			
@@ -749,6 +772,10 @@
 					grid = args.grid;
 					loop = (args.grid.getContainerNode().id.slice(-1)-1);
 					
+					//Set page unload warning as something has changed.
+					setUnload(true);
+					
+					
 					for (index = 0; index < column.length; ++index) {
 						columnIDs.push(column[index].id);
 					}
@@ -758,6 +785,14 @@
 					if (args.item.rows != 'Positioner') {
 						
 						if (args.item.rows == 'Type') {
+							if (cellValue == 'Table') {
+								grid.invalidateRow(2);
+								grid.invalidateRow(3);
+								grid.invalidateRow(4);
+								data[2][columnIDs[args.cell]] = '';
+								data[3][columnIDs[args.cell]] = '';
+								data[4][columnIDs[args.cell]] = '';
+							};
 							updatePosGridFormatting((posColumns[loop])[args.cell], cellValue);
 						};
 					
@@ -775,7 +810,7 @@
 									} else {
 										data[3][columnIDs[index]] = '';
 									}
-									(fillGrid[loop]).invalidateRow(3);
+									(grid).invalidateRow(3);
 								} else {
 									step = (data[3][columnIDs[index]]-data[2][columnIDs[index]])/(data[5]['position1']-1);
 									if (!isNaN(step)) {
@@ -848,6 +883,11 @@
 					(posGrid[loop]).updateRowCount();
 					(posGrid[loop]).render();
 				});
+				tempPosGrid.onCellChange.subscribe(function (e,args){
+					//Something changed, set unload warning.
+					setUnload(true);
+				});
+				
 				tempPosGrid.setSelectionModel(new Slick.CellSelectionModel());
 				overlayPlugin.push(new Ext.Plugins.Overlays({}));
 				tempPosGrid.registerPlugin(overlayPlugin[loop]);
@@ -931,7 +971,7 @@
 	
 	<div id="tabs-1" style="height:800px">
 	
-		<input type="checkbox" id="autoedit" checked/><label for="autoedit">Autoedit - no click to enter text. In activates Copy/Paste.</label></br>
+		<input type="checkbox" id="autoedit" checked/><label for="autoedit">Single Click Data Entry. Disables Copy/Paste.</label></br>
 		
 		<div style="float: left; padding-right:10px">
 			<h3>Loop 1</h3>		
