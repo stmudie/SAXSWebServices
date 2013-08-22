@@ -64,6 +64,9 @@
 	.stop-button {background: rgb(200,40,40) !important;color: rgb(240,240,240) !important;}
 	.stop-button:hover {background: rgb(180,40,40) !important;color: rgb(255,255,255) !important;}
 	.stop-button:active {background: rgb(255,0,0) !important;color: rgb(255,255,255) !important;}
+	.initialise-button {background: rgb(39, 145, 198) !important;color: rgb(240,240,240) !important;}
+	.initialise-button:hover {background: rgb(41, 132, 178) !important;color: rgb(255,255,255) !important;}
+	.initialise-button:active {background: rgb(0, 169, 255) !important; color: rgb(255,255,255) !important;}
 	.run-button {background: rgb(40,200,40) !important;}
 	.run-button:hover {background: rgb(40,180,40) !important;color: rgb(255,255,255) !important;}
 	.run-button:active {background: rgb(0,255,0) !important; color: rgb(0,0,0) !important;}
@@ -556,6 +559,11 @@
 					socket.emit("run",globalepn, globalscan);
 				}
 			});
+			$("#initialise").button().click(function(){
+				if (saveScan() != -1) {
+					socket.emit("initialise",globalepn, globalscan);
+				}
+			});
 			$("#stop").button().click(function(){
 				socket.emit("stop");
 			});
@@ -994,6 +1002,7 @@
 		
 		<div>
 			<button id="run" class="run-button">Run Scan</button>
+			<button id="initialise" class="initialise-button" title="Setup beamline for a scan without executing.">Initialise Scan</button>
 			<button id="stop" class="stop-button">Stop Scan</button>
 		</div>
 		

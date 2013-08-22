@@ -50,7 +50,7 @@ class GenericScanNamespace(BaseNamespace):
         
         self.emit('scandata', epn, scan, data)
 
-    def run(self,epn,scan,type='all'):
+    def initialise(self,epn,scan,type='all'):
         
         #Load scan data from redis
         data = pickle.loads(r.get('generic:' + epn + ':scan:' + scan))
@@ -66,6 +66,14 @@ class GenericScanNamespace(BaseNamespace):
         num2 = int(data['number'][1] or 1)
         num1 = int(data['number'][0] or 1)
         
+        if ((data['number'][0] or 0) > 0):
+            level = 1
+            if ((data['number'][1] or 0) > 0):
+                level = 2
+                if ((data['number'][2] or 0) > 0):
+                    level = 3
+        print 'level %d' % (level,) 
+        
         for pos3 in range(num3):
             for pos2 in range(num2):
                 for pos1 in range(num1):
@@ -75,8 +83,9 @@ class GenericScanNamespace(BaseNamespace):
         filenameString = "".join(filenames)
         filenameLen = list(running_sum([len(name) for name in filenames]))
 
-        result += caput('%s1:arrayIndices' %(indexPV, ), filenameLen)
-        result += caput('%s1:arrayValues' %(indexPV, ), filenameString)
+        if len(filenameString) > 0:
+            result += caput('%s1:arrayIndices' %(indexPV, ), filenameLen)
+            result += caput('%s1:arrayValues' %(indexPV, ), filenameString)
 
         # Setup global scan record parameters        
         tableCount = 0
@@ -102,11 +111,12 @@ class GenericScanNamespace(BaseNamespace):
             result += caput(scanPV+'DDLY', int(data['delay'][loop-1] or 0))
             
             #Index Array Positioner
-            result += caput(scanPV+'R4PV', indexPV + ':arrayIndex' + str(loop))
-            result += caput(scanPV+'P4PV', indexPV + ':arrayIndex' + str(loop))
-            result += caput(scanPV+'P4SM', 0)
-            result += caput(scanPV+'P4SP', 0)
-            result += caput(scanPV+'P4EP', number-1)            
+            if len(filenameString) > 0:
+                result += caput(scanPV+'R4PV', indexPV + ':arrayIndex' + str(loop))
+                result += caput(scanPV+'P4PV', indexPV + ':arrayIndex' + str(loop))
+                result += caput(scanPV+'P4SM', 0)
+                result += caput(scanPV+'P4SP', 0)
+                result += caput(scanPV+'P4EP', number-1)            
             
             for posNum in range(3) :
                 absPos = (loop-1)*3+posNum
@@ -148,33 +158,26 @@ class GenericScanNamespace(BaseNamespace):
         result += caput(indexPV + ':arrayIndex1',0)
         result += caput(indexPV + ':arrayIndex2',0)
         result += caput(indexPV + ':arrayIndex3',0)
+
+        #Determine which scan level to start. One less than the lowest with no positions.
+        if ((data['number'][0] or 0) > 0):
+            level = 1
+            if ((data['number'][1] or 0) > 0):
+                level = 2
+                if ((data['number'][2] or 0) > 0):
+                    level = 3
+    
+    
+        return level
         
-     
-        # Setup sample name and concentration positioners
-        #result = 0
-        #result += caput(indexPV+'1:arrayValues', str(sampleNameString))
-        #result += caput(indexPV+'1:arrayIndices', sampleNameCoord)
-        #result += caput(indexPV+'2:arrayValues', concentration)
-        #result += caput(indexPV+'2:arrayIndices', range(len(positions)))
-        #result += caput(scanPV+'P4SM', 0)
-        #result += caput(scanPV+'P4SP', 0)
-        #result += caput(scanPV+'P4EP', len(positions)-1)
-        #result += caput(scanPV+'R4PV', indexPV + ':arrayIndex1')
-        #result += caput(scanPV+'P4PV', indexPV + ':arrayIndex1')
-        #result += caput(indexPV+':arrayIndex2',0)
-        #result += caput(indexPV+':arrayIndex3',0)
-        #if result != 11 :
-        #    print "Something wrong setting some PVs. Continuing anyway."
-        #
-        # Setup detectors
-        #result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
-        #if result != 1 :
-        #    print "Something wrong setting some PVs. Continuing anyway."
-        #
-        #scanning = caput(scanPV+'EXSC', 1)
-        
-    def on_run(self,epn,plate):
-        self.run(epn, plate)
+    def run(self, level):
+        scanning = caput('SR13ID01HU02IOC02:scan%d.EXSC' % (level,), 1)
+
+    def on_initialise(self,epn,scan):
+        self.initialise(epn,scan)
+    
+    def on_run(self,epn,scan):
+        self.run(self.initialise(epn, scan))
 
     def recv_message(self, message):
         print "PING!!!", message
