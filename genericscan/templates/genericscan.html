@@ -135,15 +135,17 @@
 			$("#qrimage").attr('src','/genericscan/qrcode/' + epn + '/' + scan);
 			$("#qrimagelink").attr('href','/genericscan/qrcode/' + epn + '/' + scan);
 			
+			$('#nameorder').val('Loop'+data.nameorder.join('Loop'));
 			
-			for (var loop = 0; loop <=2; ++loop) {
+			for (var loop = 0; loop <=3; ++loop) {
 				
 				fillGrid[loop].invalidateAllRows();
-				updateTableLength(posGrid[loop],data.number[loop]);
 				
 				if (data.number[loop] == 0 || data.number[loop] == null) {
-					posData[loop] = [{colNum:1}];
+					updateTableLength(posGrid[loop],1);
+					posData[loop][0] = [{colNum:1}];
 				} else {
+					updateTableLength(posGrid[loop],data.number[loop]);
 					for (var i=0; i<data.number[loop]; i++) {
 						posData[loop][i]['name'] = data.filenames[loop][i];
 					};
@@ -154,9 +156,10 @@
 					
 					(fillData[loop])[0]['position'+String(posIndex)] = data.positioners[index]['Name'];
 					(fillData[loop])[1]['position'+String(posIndex)] = data.type[index];
-					(fillData[loop])[2]['position'+String(posIndex)] = data.start[index];
-					(fillData[loop])[3]['position'+String(posIndex)] = data.end[index];
-					(fillData[loop])[4]['position'+String(posIndex)] = data.step[index];
+					(fillData[loop])[2]['position'+String(posIndex)] = data.relative[index];
+					(fillData[loop])[3]['position'+String(posIndex)] = data.start[index];
+					(fillData[loop])[4]['position'+String(posIndex)] = data.end[index];
+					(fillData[loop])[5]['position'+String(posIndex)] = data.step[index];
 					updatePosGridFormatting(posColumns[loop][posIndex+1],data.type[index]);
 					
 					if (data.type[index] == 'Table') {
@@ -166,8 +169,8 @@
 						tableCount++;
 					};
 				};
-				(fillData[loop])[5]['position1'] = data.number[loop];
-				(fillData[loop])[6]['position1'] = data.delay[loop];
+				(fillData[loop])[6]['position1'] = data.number[loop];
+				(fillData[loop])[7]['position1'] = data.delay[loop];
 				fillGrid[loop].render();
 				updatePosGridColumn(loop,['empty','rows','position1','position2','position3']);
 			};
@@ -189,7 +192,25 @@
 		
 		var alphabet = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz").split("");
 		
-		var selectorLists = {Type: ['Linear','Exponential','Table'],Positioner: Object.keys(positionerStruct)};
+		function looplist(){
+			var list = [];
+			for (var l1=1;l1<=4;l1++) {
+				for (var l2=1;l2<=4;l2++) {
+					if (l2==l1) { continue };
+					for (var l3=1;l3<=4;l3++) {
+						if (l3==l2 || l3==l1) { continue };
+						for (var l4=1;l4<=4;l4++) {
+							if (l4==l3 || l4==l2 || l4==l1) { continue };
+							list.push('Loop'+l1+'Loop'+l2+'Loop'+l3+'Loop'+l4);
+						};
+					};
+				};
+			};
+			return list
+			
+		}
+		
+		var selectorLists = {Type: ['Linear','Exponential','Table'], "Abs/Rel": ['Absolute','Relative'], Positioner: Object.keys(positionerStruct)};
 		
 		function AutoCompleteEditor(args) {
 			var $input;
@@ -295,7 +316,7 @@
 			};
 		    
 			this.serializeValue = function () {
-			  return parseFloat($input.val(), 10) || "";
+			  return parseFloat($input.val());
 			};
 		    
 			this.applyValue = function (item, state) {
@@ -329,6 +350,7 @@
 			var rowIndex;
 			var positioner = [];
 			var type = [];
+			var relative = [];
 			var start = [];
 			var end = [];
 			var step = [];
@@ -337,7 +359,7 @@
 			var tableData = [];
 			var filenames = [];
 			
-			for (var loop = 0; loop <=2; ++loop) {
+			for (var loop = 0; loop <=3; ++loop) {
 				var filenamesTemp = [];
 				for (var row=0; row < posData[loop].length; row++) {
 					filenamesTemp.push(posData[loop][row]['name']);
@@ -348,9 +370,10 @@
 					positionerTemp = (fillData[loop])[0]['position'+String(posIndex)]
 					positioner.push({Name: positionerTemp, PV: positionerStruct[positionerTemp]});
 					type.push((fillData[loop])[1]['position'+String(posIndex)]);
-					start.push((fillData[loop])[2]['position'+String(posIndex)]);
-					end.push((fillData[loop])[3]['position'+String(posIndex)]);
-					step.push((fillData[loop])[4]['position'+String(posIndex)]);
+					relative.push((fillData[loop])[2]['position'+String(posIndex)]);
+					start.push((fillData[loop])[3]['position'+String(posIndex)]);
+					end.push((fillData[loop])[4]['position'+String(posIndex)]);
+					step.push((fillData[loop])[5]['position'+String(posIndex)]);
 					
 					if (type[type.length-1] == 'Table') {
 						var tableDataTemp = [];
@@ -360,15 +383,17 @@
 						tableData.push(tableDataTemp);
 					};
 				};
-				number.push((fillData[loop])[5]['position1']);
-				delay.push((fillData[loop])[6]['position1']);
+				number.push((fillData[loop])[6]['position1']);
+				delay.push((fillData[loop])[7]['position1']);
 			}
 			
 			var data = {};
 			data['scanname'] = globalscan;
 			data['filenames'] = filenames;
+			data['nameorder'] = $('#nameorder').val().split('Loop').slice(1);
 			data['positioners'] = positioner;
 			data['type'] = type;
+			data['relative'] = relative;
 			data['start'] = start;
 			data['end'] = end;
 			data['step'] = step;
@@ -409,9 +434,12 @@
 		};
 		
 		function buildNames() {
+			
+			fragmentOrder = $('#nameorder').val().split('Loop').slice(1);
+			
 			expandedGrid.invalidateAllRows();
 
-			expandedLength = Math.max(posData[0].length,1)*Math.max(posData[1].length,1)*Math.max(posData[2].length,1) + 1;
+			expandedLength = Math.max(posData[0].length,1)*Math.max(posData[1].length,1)*Math.max(posData[2].length,1)*Math.max(posData[3].length,1) + 1;
 			
 			//dataLength = (expandedGrid).getDataLength();
 			(expandedData).splice(1,expandedData.length -1);
@@ -433,51 +461,63 @@
 			dataRow.position7 = fillData[2][0].position1;
 			dataRow.position8 = fillData[2][0].position2;
 			dataRow.position9 = fillData[2][0].position3;
+			dataRow.position10 = fillData[3][0].position1;
+			dataRow.position11 = fillData[3][0].position2;
+			dataRow.position12 = fillData[3][0].position3;
 			
 			delay = [];
 			
-			for (var pos3=0;pos3<posData[2].length;pos3++){
-				for (var pos2=0;pos2<posData[1].length;pos2++){
-					for (var pos1=0;pos1<posData[0].length;pos1++){
-						
-						position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length;
-						
-						fragment1 = posData[0][pos1].name;
-						if (fragment1 == undefined) {fragment1=''};
-						fragment2 = posData[1][pos2].name;
-						if (fragment2 == undefined) {fragment2=''};
-						fragment3 = posData[2][pos3].name;
-						if (fragment3 == undefined) {fragment3=''};
-
-						dataRow = expandedData[position + 1];
-						
-						dataRow.name = fragment1 + fragment2 + fragment3;
-						
-						dataRow.position1 = posData[0][pos1].position1
-						dataRow.position2 = posData[0][pos1].position2
-						dataRow.position3 = posData[0][pos1].position3
-						
-						dataRow.position4 = posData[1][pos2].position1
-						dataRow.position5 = posData[1][pos2].position2
-						dataRow.position6 = posData[1][pos2].position3
-						
-						dataRow.position7 = posData[2][pos3].position1
-						dataRow.position8 = posData[2][pos3].position2
-						dataRow.position9 = posData[2][pos3].position3
-						
-						delayVal = [0,0,0];
-						
-						for (var loop=0; loop<3; loop++) {
-							if ((fillData[loop])[6]["position1"] == undefined) {
-								delayVal[loop] = 0;
-							} else {
-								delayVal[loop] = parseFloat("0"+(fillData[loop])[6]["position1"]);
+			for (var pos4=0;pos4<posData[3].length;pos4++){
+				for (var pos3=0;pos3<posData[2].length;pos3++){
+					for (var pos2=0;pos2<posData[1].length;pos2++){
+						for (var pos1=0;pos1<posData[0].length;pos1++){
+							
+							position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length + pos4*posData[2].length*posData[1].length*posData[0].length;
+							var fragment = ['','','',''];
+							fragment[0] = posData[0][pos1].name;
+							if (fragment[0] == undefined) {fragment[0]=''};
+							fragment[1] = posData[1][pos2].name;
+							if (fragment[1] == undefined) {fragment[1]=''};
+							fragment[2] = posData[2][pos3].name;
+							if (fragment[2] == undefined) {fragment[2]=''};
+							fragment[3] = posData[3][pos4].name;
+							if (fragment[3] == undefined) {fragment[3]=''};
+	
+							dataRow = expandedData[position + 1];
+							
+							dataRow.name = fragment[fragmentOrder[0]-1] + fragment[fragmentOrder[1]-1] + fragment[fragmentOrder[2]-1] + fragment[fragmentOrder[3]-1];
+							
+							dataRow.position1 = posData[0][pos1].position1
+							dataRow.position2 = posData[0][pos1].position2
+							dataRow.position3 = posData[0][pos1].position3
+							
+							dataRow.position4 = posData[1][pos2].position1
+							dataRow.position5 = posData[1][pos2].position2
+							dataRow.position6 = posData[1][pos2].position3
+							
+							dataRow.position7 = posData[2][pos3].position1
+							dataRow.position8 = posData[2][pos3].position2
+							dataRow.position9 = posData[2][pos3].position3
+							
+							dataRow.position10 = posData[3][pos4].position1
+							dataRow.position11 = posData[3][pos4].position2
+							dataRow.position12 = posData[3][pos4].position3
+							
+							delayVal = [0,0,0,0];
+							
+							for (var loop=0; loop<4; loop++) {
+								if ((fillData[loop])[7]["position1"] == undefined) {
+									delayVal[loop] = 0;
+								} else {
+									delayVal[loop] = parseFloat("0"+(fillData[loop])[7]["position1"]);
+								};
 							};
+							
+							delay.push(delayVal[0] +
+								(((position+1) % posData[0].length) == 0)*delayVal[1] +
+								(((position+1) % (posData[0].length*posData[1].length)) == 0)*delayVal[2] +
+								(((position+1) % (posData[0].length*posData[1].length*posData[2].length)) == 0)*delayVal[3]);
 						};
-						
-						delay.push(delayVal[0] +
-							(((position+1) % posData[0].length) == 0)*delayVal[1] +
-							(((position+1) % (posData[0].length*posData[1].length)) == 0)*delayVal[2]);
 					};
 				};
 			};
@@ -574,7 +614,7 @@
 			
 			$( "#autoedit").click(function(){
 				if ($(this).is(':checked')){
-					for(var loop=0;loop<=2;loop++){
+					for(var loop=0;loop<=3;loop++){
 						posGrid[loop].unregisterPlugin(copyManager[loop]);	
 						options = posGrid[loop].getOptions();
 						options.autoEdit = true;
@@ -582,7 +622,7 @@
 					};
 				} else {
 
-					for(var loop=0;loop<=2;loop++){
+					for(var loop=0;loop<=3;loop++){
 						copyManager[loop] = (new Slick.CellExternalCopyManager());
 						posGrid[loop].registerPlugin(copyManager[loop]);
 						options = posGrid[loop].getOptions();
@@ -597,6 +637,8 @@
 			});
 			$("#scanname").autocomplete({minLength:0})
 				.focus(function(){$(this).autocomplete('search', $(this).val())});
+			$("#nameorder").autocomplete({minLength:0, source: looplist()})
+				.focus(function(){$(this).autocomplete('search', "")});
 			$("#userepn").change(function(){
 				socket.emit('changeepn',$(this).val());
 			});
@@ -608,10 +650,15 @@
 				column["cssClass"] = "TableColumn";
 			} else {
 				(column)["editor"] = null;
-				if (type == 'Linear'){
-					column["cssClass"] = "LinearColumn";
-				} else {
-					column["cssClass"] = "ExponentialColumn";
+				switch (type) {
+					case 'Linear':
+						column["cssClass"] = "LinearColumn";
+						break;
+					case 'Exponential' :
+						column["cssClass"] = "ExponentialColumn";
+						break;
+					default:
+						break;
 				};
 			};
 		}
@@ -639,10 +686,11 @@
 			for (idNum = 0; idNum < columnIDArray.length; ++idNum ) {
 				columnID = columnIDArray[idNum];
 				type = (fillData[loop])[1][columnID];
-				start = (fillData[loop])[2][columnID];
-				end = (fillData[loop])[3][columnID];
-				step = (fillData[loop])[4][columnID];
-				number = (fillData[loop])[5]["position1"];
+				relative = (fillData[loop])[2][columnID];
+				start = (fillData[loop])[3][columnID];
+				end = (fillData[loop])[4][columnID];
+				step = (fillData[loop])[5][columnID];
+				number = (fillData[loop])[6]["position1"];
 				
 				switch (type) {
 					case 'Linear' :
@@ -681,7 +729,7 @@
 		function formatColumns(row) {
 			columns = {};
 				
-			if (row <= 1) {
+			if (row <= 2) {
 				columns = {
 					"position1": {
 						editor: AutoCompleteEditor
@@ -706,12 +754,12 @@
 					}
 				};
 			}
-			if (row == 5) {
+			if (row == 6) {
 				columns["position1"]["colspan"] = 3;
 				columns["position1"]["editor"] = Slick.Editors.Integer;
 					
 			}
-			if (row == 6) {
+			if (row == 7) {
 				columns["position1"]["colspan"] = 3;
 				columns["position1"]["editor"] = FloatEditor;
 					
@@ -725,7 +773,7 @@
 		var fillColumns = [];
 		var fillData = [];
 
-		for (var loop=0;loop<=2;loop++){	
+		for (var loop=0;loop<=3;loop++){	
 			fillColumns.push(
 				[{id: "empty", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
 				{id: "rows", name: "", field: "rows", width: 80},
@@ -734,7 +782,7 @@
 				{id: "position3", name: "Position3", field: "position3", width: 80}]
 			);
 			fillData.push(
-				[{rows:'Positioner'},{rows:'Type'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'},{rows:'Delay (s)'}]
+				[{rows:'Positioner'},{rows:'Type'},{rows:'Abs/Rel', position1:'Absolute', position2:'Absolute', position3:'Absolute'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'},{rows:'Delay (s)'}]
 			);
 		};
 		
@@ -751,20 +799,20 @@
 		$(function () {
 			
 			expandedData.getItemMetadata = formatExpandedColumns;
-			for(var i=0;i<=2;i++){fillData[i].getItemMetadata = formatColumns};
+			for(var i=0;i<=3;i++){fillData[i].getItemMetadata = formatColumns};
 					    			
-			for (var loop=0;loop<=2;loop++) {
+			for (var loop=0;loop<=3;loop++) {
 			
 
 				tempFillGrid = new Slick.Grid("#fillGrid"+String(loop+1), fillData[loop], fillColumns[loop], fillOptions);
 				
-				tempFillGrid.addCellCssStyles('span',{5:{"position1": "centre-span"}, 6:{"position1": "centre-span"}});
+				tempFillGrid.addCellCssStyles('span',{6:{"position1": "centre-span"}, 7:{"position1": "centre-span"}});
 				
 				//Event Handlers
 				
 				tempFillGrid.onBeforeEditCell.subscribe(function(e,args){
 					data = args.grid.getData();
-					if (args.row > 1 && args.row < 5){
+					if (args.row > 1 && args.row < 6){
 						if (data[1][args.column.id] == "Table"){
 							return false;
 						};
@@ -794,12 +842,12 @@
 						
 						if (args.item.rows == 'Type') {
 							if (cellValue == 'Table') {
-								grid.invalidateRow(2);
 								grid.invalidateRow(3);
 								grid.invalidateRow(4);
-								data[2][columnIDs[args.cell]] = '';
+								grid.invalidateRow(5);
 								data[3][columnIDs[args.cell]] = '';
 								data[4][columnIDs[args.cell]] = '';
+								data[5][columnIDs[args.cell]] = '';
 							};
 							updatePosGridFormatting((posColumns[loop])[args.cell], cellValue);
 						};
@@ -811,22 +859,22 @@
 						
 						for (index = index1; index <= index2; ++index) {
 							if (data[1][columnIDs[index]] == 'Linear'){
-								if (args.item.rows == 'Step' || (data[4][columnIDs[index]] != '' && data[3][columnIDs[index]] == '')) {
-									end = data[2][columnIDs[index]]+data[4][columnIDs[index]]*(data[5]['position1']-1);
+								if (args.item.rows == 'Step' || (data[5][columnIDs[index]] != '' && data[4][columnIDs[index]] == '')) {
+									end = data[3][columnIDs[index]]+data[5][columnIDs[index]]*(data[6]['position1']-1);
 									if (!isNaN(end)) {
-										data[3][columnIDs[index]] = end.toFixed(3);
-									} else {
-										data[3][columnIDs[index]] = '';
-									}
-									(grid).invalidateRow(3);
-								} else {
-									step = (data[3][columnIDs[index]]-data[2][columnIDs[index]])/(data[5]['position1']-1);
-									if (!isNaN(step)) {
-										data[4][columnIDs[index]] = step.toFixed(3);
+										data[4][columnIDs[index]] = end.toFixed(4);
 									} else {
 										data[4][columnIDs[index]] = '';
 									}
 									(grid).invalidateRow(4);
+								} else {
+									step = (data[4][columnIDs[index]]-data[3][columnIDs[index]])/(data[6]['position1']-1);
+									if (!isNaN(step)) {
+										data[5][columnIDs[index]] = step.toFixed(4);
+									} else {
+										data[5][columnIDs[index]] = '';
+									}
+									(grid).invalidateRow(5);
 								}	
 							}	
 							(grid).render();
@@ -845,7 +893,7 @@
 		var posColumns = [];
 		var posData = [];
 		
-		for (var loop=0;loop<=2;loop++) {
+		for (var loop=0;loop<=3;loop++) {
 			posColumns.push(
 				[{id: "colNum", name: "", field: "colNum", width: 8, cssClass: "num-column", cannotTriggerInsert: true, resizable: false, selectable: false},
 				{id: "name", name: "Filename", field: "name", width: 80, editor: Slick.Editors.Text},
@@ -879,7 +927,7 @@
 		var overlayPlugin = [];
 
 		$(function () {
-			for (var loop=0;loop<=2;loop++) {
+			for (var loop=0;loop<=3;loop++) {
 				tempPosGrid = new Slick.Grid("#positionGrid"+String(loop+1), posData[loop], posColumns[loop], posOptions);
 				tempPosGrid.setSelectionModel(new Slick.CellSelectionModel());
 				
@@ -919,7 +967,10 @@
 			{id: "position6", name: "Position6", field: "position6", width: 100},
 			{id: "position7", name: "Position7", field: "position7", width: 100},
 			{id: "position8", name: "Position8", field: "position8", width: 100},
-			{id: "position9", name: "Position9", field: "position9", width: 100}
+			{id: "position9", name: "Position9", field: "position9", width: 100},
+			{id: "position10", name: "Position10", field: "position10", width: 100},
+			{id: "position11", name: "Position11", field: "position11", width: 100},
+			{id: "position12", name: "Position12", field: "position12", width: 100}
 		];
 		
 		expandedColumns[0].header = {
@@ -969,7 +1020,7 @@
 </span>	
 <a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
 
-<div class="genericscan" style="width:1155px">
+<div class="genericscan" style="width:1530px">
 
 <div id="tabs">
 	<ul>
@@ -977,24 +1028,30 @@
 		<li><a id="scanrun" href="#tabs-2">Start Scan</a></li>
 	</ul>
 	
-	<div id="tabs-1" style="height:800px">
+	<div id="tabs-1" style="height:820px">
 	
-		<input type="checkbox" id="autoedit" checked/><label for="autoedit">Single Click Data Entry. Disables Copy/Paste.</label></br>
+		<input type="checkbox" id="autoedit" checked/><label for="autoedit">Single Click Data Entry. Disables Copy/Paste.</label>
+		<label for="nameorder" style="padding-left: 30px; padding-right: 5px;">Name Order:</label><input id="nameorder" value="Loop1Loop2Loop3Loop4" style="width:150px"></input></br>
 		
 		<div style="float: left; padding-right:10px">
 			<h3>Loop 1</h3>		
-			<div id="fillGrid1" style="width:350px;height:220px;clear:both;"></div>
+			<div id="fillGrid1" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid1" style="width:365px;height:540px;clear:both;"></div>
 		</div>
 		<div style="float: left; padding-right:10px">
 			<h3>Loop 2</h3>		
-			<div id="fillGrid2" style="width:350px;height:220px;clear:both;"></div>
+			<div id="fillGrid2" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid2" style="width:365px;height:540px;clear:both;"></div>
 		</div>
-		<div style="float: left">
+		<div style="float: left; padding-right:10px">
 			<h3>Loop 3</h3>		
-			<div id="fillGrid3" style="width:350px;height:220px;clear:both;"></div>
+			<div id="fillGrid3" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid3" style="width:365px;height:540px;clear:both;"></div>
+		</div>
+		<div style="float: left">
+			<h3>Loop 4</h3>		
+			<div id="fillGrid4" style="width:365px;height:240px;clear:both;"></div>
+			<div id="positionGrid4" style="width:365px;height:540px;clear:both;"></div>
 		</div>
 			
 	</div>
@@ -1006,7 +1063,7 @@
 			<button id="stop" class="stop-button">Stop Scan</button>
 		</div>
 		
-		<div id="expandedGrid" style="width:1050px;height:800px;clear:both;"></div>
+		<div id="expandedGrid" style="width:1350px;height:800px;clear:both;"></div>
 		
 	</div>
 </div>
@@ -1015,3 +1072,4 @@
 
 </body>
 </html>
+5

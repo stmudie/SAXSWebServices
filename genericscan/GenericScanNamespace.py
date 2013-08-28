@@ -62,24 +62,18 @@ class GenericScanNamespace(BaseNamespace):
                 
         #Setup filenames
         filenames = []
+        num4 = int(data['number'][3] or 1)
         num3 = int(data['number'][2] or 1)
         num2 = int(data['number'][1] or 1)
         num1 = int(data['number'][0] or 1)
         
-        if ((data['number'][0] or 0) > 0):
-            level = 1
-            if ((data['number'][1] or 0) > 0):
-                level = 2
-                if ((data['number'][2] or 0) > 0):
-                    level = 3
-        print 'level %d' % (level,) 
-        
-        for pos3 in range(num3):
-            for pos2 in range(num2):
-                for pos1 in range(num1):
-                    #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
-                    filenames.append(xstr(data['filenames'][0][pos1]) + xstr(data['filenames'][1][pos2]) + xstr(data['filenames'][2][pos3]))
-                    
+        for pos4 in range(num4):
+            for pos3 in range(num3):
+                for pos2 in range(num2):
+                    for pos1 in range(num1):
+                        #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
+                        filenames.append(xstr(data['filenames'][data['nameorder'][0]][pos1]) + xstr(data['filenames'][[data['nameorder'][1]]][pos2]) + xstr(data['filenames'][[data['nameorder'][2]]][pos3]) + xstr(data['filenames'][[data['nameorder'][3]]][pos4]))
+
         filenameString = "".join(filenames)
         filenameLen = list(running_sum([len(name) for name in filenames]))
 
@@ -90,7 +84,7 @@ class GenericScanNamespace(BaseNamespace):
         # Setup global scan record parameters        
         tableCount = 0
 
-        for loop in range(1,4):
+        for loop in range(1,5):
             scanPV = 'SR13ID01HU02IOC02:scan%d.' % (loop,)
             
             #Clear SCAN
@@ -132,6 +126,7 @@ class GenericScanNamespace(BaseNamespace):
                 
                 result += caput(scanPV+'R'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
                 result += caput(scanPV+'P'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
+                result += caput(scanPV+'P'+str(1+posNum)+'AR', data['relative'][absPos])
                 
                 if scantype == 'Linear':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
@@ -152,9 +147,6 @@ class GenericScanNamespace(BaseNamespace):
                 else:
                     pass  
 
-                
-
-
         result += caput(indexPV + ':arrayIndex1',0)
         result += caput(indexPV + ':arrayIndex2',0)
         result += caput(indexPV + ':arrayIndex3',0)
@@ -166,7 +158,8 @@ class GenericScanNamespace(BaseNamespace):
                 level = 2
                 if ((data['number'][2] or 0) > 0):
                     level = 3
-    
+                    if ((data['number'][2] or 0) > 0):
+                        level = 4
     
         return level
         
