@@ -6,6 +6,11 @@ import time
 
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
+# Base PVS
+indexPV = "13INDEXARRAY:array"
+#IOCPV = 'SR13ID01HU02IOC02:'
+IOCPV = 'SMTEST:'
+
 def xstr(s):
     if s is None:
         return ''
@@ -54,11 +59,6 @@ class GenericScanNamespace(BaseNamespace):
         
         #Load scan data from redis
         data = pickle.loads(r.get('generic:' + epn + ':scan:' + scan))
-        
-        # Base PVS
-        indexPV = "13INDEXARRAY:array"
-        IOCPV = 'SR13ID01HU02IOC02:'
-        result = 0
                 
         #Setup filenames
         filenames = []
@@ -72,10 +72,14 @@ class GenericScanNamespace(BaseNamespace):
                 for pos2 in range(num2):
                     for pos1 in range(num1):
                         #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
-                        filenames.append(xstr(data['filenames'][data['nameorder'][0]][pos1]) + xstr(data['filenames'][[data['nameorder'][1]]][pos2]) + xstr(data['filenames'][[data['nameorder'][2]]][pos3]) + xstr(data['filenames'][[data['nameorder'][3]]][pos4]))
+                        
+                        
+                        filenames.append(xstr(data['filenames'][(data['nameorder'][0]-1)][pos1]) + xstr(data['filenames'][(data['nameorder'][1]-1)][pos2]) + xstr(data['filenames'][(data['nameorder'][2]-1)][pos3]) + xstr(data['filenames'][(data['nameorder'][3]-1)][pos4]))
 
         filenameString = "".join(filenames)
         filenameLen = list(running_sum([len(name) for name in filenames]))
+
+        result = 0
 
         if len(filenameString) > 0:
             result += caput('%s1:arrayIndices' %(indexPV, ), filenameLen)
@@ -85,7 +89,7 @@ class GenericScanNamespace(BaseNamespace):
         tableCount = 0
 
         for loop in range(1,5):
-            scanPV = 'SR13ID01HU02IOC02:scan%d.' % (loop,)
+            scanPV = '%sscan%d.' % (IOCPV,loop)
             
             #Clear SCAN
             result += caput(scanPV+'CMND',3)
@@ -95,7 +99,7 @@ class GenericScanNamespace(BaseNamespace):
             if loop == 1 :
                 result += caput(scanPV+'T1PV','13PIL1:cam1:Acquire')
             else :
-                result += caput(scanPV+'T1PV','SR13ID01HU02IOC02:scan%d.EXSC' % (loop-1,))
+                result += caput(scanPV+'T1PV','%sscan%d.EXSC' % (IOCPV,loop-1))
             
             #Set number of points
             number = int(data['number'][loop-1] or 0)
@@ -126,7 +130,7 @@ class GenericScanNamespace(BaseNamespace):
                 
                 result += caput(scanPV+'R'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
                 result += caput(scanPV+'P'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
-                result += caput(scanPV+'P'+str(1+posNum)+'AR', data['relative'][absPos])
+                result += caput(scanPV+'P'+str(1+posNum)+'AR', data['relative'][absPos]=='Relative')
                 
                 if scantype == 'Linear':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
@@ -147,9 +151,9 @@ class GenericScanNamespace(BaseNamespace):
                 else:
                     pass  
 
-        result += caput(indexPV + ':arrayIndex1',0)
-        result += caput(indexPV + ':arrayIndex2',0)
-        result += caput(indexPV + ':arrayIndex3',0)
+        #result += caput(indexPV + ':arrayIndex1',0)
+        #result += caput(indexPV + ':arrayIndex2',0)
+        #result += caput(indexPV + ':arrayIndex3',0)
 
         #Determine which scan level to start. One less than the lowest with no positions.
         if ((data['number'][0] or 0) > 0):
@@ -164,7 +168,7 @@ class GenericScanNamespace(BaseNamespace):
         return level
         
     def run(self, level):
-        scanning = caput('SR13ID01HU02IOC02:scan%d.EXSC' % (level,), 1)
+        scanning = caput('%sscan%d.EXSC' % (IOCPV,level), 1)
 
     def on_initialise(self,epn,scan):
         self.initialise(epn,scan)

@@ -390,7 +390,7 @@
 			var data = {};
 			data['scanname'] = globalscan;
 			data['filenames'] = filenames;
-			data['nameorder'] = $('#nameorder').val().split('Loop').slice(1);
+			data['nameorder'] = $('#nameorder').val().split('Loop').slice(1).map(function(x){return parseInt(x,10)});
 			data['positioners'] = positioner;
 			data['type'] = type;
 			data['relative'] = relative;
