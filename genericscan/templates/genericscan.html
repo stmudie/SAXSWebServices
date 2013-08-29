@@ -545,14 +545,36 @@
 			var value1First = ''
 			var value2First = ' '
 			
+			
+			for (var i=value1.length-1;i>=0;i--) {
+				if (isNaN(value1.slice(i))){
+					suffix1 = i+1;
+					break;
+				}
+				suffix1 = -1;
+			}
+			
+			for (var i=value2.length-1;i>=0;i--) {
+				if (isNaN(value2.slice(i))){
+					suffix2 = i+1;
+					break;
+				}
+				suffix2 = -1;
+			}
+			
+			if (value1.slice(0,suffix1) == value2.slice(0,suffix2)) {
+				suffix = suffix2;
+			} else {suffix = -1}
+			
+			console.log(suffix1, suffix2, suffix);
 			if (typeof(value1) =="string") {
-				value1First = value1.slice(0,-1);
-				value1Last = value1.slice(-1);
+				value1First = value1.slice(0,suffix);
+				value1Last = value1.slice(suffix);
 			};
 			
 			if (typeof(value2) =="string") {
-				value2First = value2.slice(0,-1);
-				value2Last = value2.slice(-1);
+				value2First = value2.slice(0,suffix);
+				value2Last = value2.slice(suffix);
 			};
 		
 			if (typeof(value1) == "number" && typeof(value2) == "number") {
