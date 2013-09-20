@@ -8,8 +8,8 @@ r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 # Base PVS
 indexPV = "13INDEXARRAY:array"
-#IOCPV = 'SR13ID01HU02IOC02:'
-IOCPV = 'SMTEST:'
+IOCPV = 'SR13ID01HU02IOC02:'
+#IOCPV = 'SMTEST:'
 
 def xstr(s):
     if s is None:
@@ -72,12 +72,12 @@ class GenericScanNamespace(BaseNamespace):
                 for pos2 in range(num2):
                     for pos1 in range(num1):
                         #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
-                        
-                        
+                       
                         filenames.append(xstr(data['filenames'][(data['nameorder'][0]-1)][pos1]) + xstr(data['filenames'][(data['nameorder'][1]-1)][pos2]) + xstr(data['filenames'][(data['nameorder'][2]-1)][pos3]) + xstr(data['filenames'][(data['nameorder'][3]-1)][pos4]))
 
         filenameString = "".join(filenames)
         filenameLen = list(running_sum([len(name) for name in filenames]))
+        filenameLen.insert(0,0)
 
         result = 0
 
@@ -124,8 +124,16 @@ class GenericScanNamespace(BaseNamespace):
                 
                 print data['positioners']
                 
-                start = data['start'][absPos]
-                end = data['end'][absPos]
+                try:
+	            start =float(data['start'][absPos])
+                except:
+                    pass
+
+                try:
+	            end = float(data['end'][absPos])
+                except:
+                    pass
+
                 scantype = data['type'][absPos]
                 
                 result += caput(scanPV+'R'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
@@ -135,7 +143,7 @@ class GenericScanNamespace(BaseNamespace):
                 if scantype == 'Linear':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
                     result += caput(scanPV+'P'+str(1+posNum)+'SP', start)
-                    result += caput(scanPV+'P'+str(1+posNum)+'EP', end)
+		    result += caput(scanPV+'P'+str(1+posNum)+'EP',end)
                 
                 elif scantype == 'Exponential' :
                     prefactor = (end-start)/((number-1)*(step**(number-1)));
@@ -145,15 +153,16 @@ class GenericScanNamespace(BaseNamespace):
                 
                 elif scantype == 'Table' :
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
-                    result += caput(scanPV+'P'+str(1+posNum)+'PA', data['tableData'][tableCount])
+                    tableData = [float(dataPoint) for dataPoint in (data['tableData'][tableCount])]
+                    result += caput(scanPV+'P'+str(1+posNum)+'PA', tableData)
                     tableCount = tableCount + 1
                     
                 else:
                     pass  
 
-        #result += caput(indexPV + ':arrayIndex1',0)
-        #result += caput(indexPV + ':arrayIndex2',0)
-        #result += caput(indexPV + ':arrayIndex3',0)
+        result += caput(indexPV + ':arrayIndex1',0)
+        result += caput(indexPV + ':arrayIndex2',0)
+        result += caput(indexPV + ':arrayIndex3',0)
 
         #Determine which scan level to start. One less than the lowest with no positions.
         if ((data['number'][0] or 0) > 0):

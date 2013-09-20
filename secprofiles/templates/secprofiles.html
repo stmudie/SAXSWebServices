@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>SAXS Profiles</title>
+		<title>SEC Profiles</title>
 
 		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
 		<script type="text/javascript" src="{{ url_for('secprofiles.static', filename='socket.io.js')}}"></script>
@@ -391,7 +391,7 @@ socket.on('File_List', function(filelist){
 socket.on('Rg_Array', function(data) {
 	filename = data.filename;
 	Rg_Data = data.profile;
-	raw_dat_chart.series[0].setData(Rg_Data);
+        raw_dat_chart.series[0].setData(Rg_Data);
 	raw_dat_chart.setTitle({text: filename});
 });
 socket.on('I0_Array', function(data) {
@@ -483,7 +483,7 @@ function clearBuffer(){
 	$('#LowBufSpin').val(-1);
 	$('#HighBufSpin').val(-1);
 	HighBufSelect = (LowBufSelect = -1);
-	updateRectangle(highlightBufRec, highlightBufRecLabel, LowBufSelect, HighBufSelect);
+	//updateRectangle(highlightBufRec, highlightBufRecLabel, LowBufSelect, HighBufSelect);
 	highlightBufRecLabel.attr({visibility: 'hidden'});
 };
 
@@ -491,7 +491,7 @@ function clearSample(){
 	$('#LowSpin').val(-1);
 	$('#HighSpin').val(-1);
 	HighSelect = (LowSelect = -1);
-	updateRectangle(highlightRec, highlightRecLabel, LowSelect, HighSelect);
+	//updateRectangle(highlightRec, highlightRecLabel, LowSelect, HighSelect);
 	highlightRecLabel.attr({visibility: 'hidden'});
 };
 
