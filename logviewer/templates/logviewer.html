@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Log Viewer</title>
+    
+    <!-- DataTables CSS -->
+    <!--<link rel="stylesheet" type="text/css" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css"> -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/css/jquery.dataTables.css')}}">
+	<!--<style type="text/css" title="currentStyle">
+		@import "{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/css/demo_page.css')}}"; @import "{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/css/header.ccss')}}";
+		@import "{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/css/demo_table.css')}}";
+	</style>-->
+	<link rel="stylesheet" type="text/css" href="">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColVis-1.0.8/media/css/ColVis.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColReorder-1.0.8/media/css/ColReorder.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='jquery/ui/css/jquery-ui-1.8.4.custom.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='jquery/ui/css/demo_table_jui.css')}}">
+    <style>
+        table.dataTable tr.even td.invalidFlagEven { background-color: #FEEFF2; }
+        table.dataTable tr.odd td.invalidFlagOdd { background-color: #FEDFE4; }
+        table.dataTable tr.even td.invalidFlagEvenSorting { background-color: #FEDFE4; }
+        table.dataTable tr.odd td.invalidFlagOddSorting { background-color: pink; }
+    </style>    
+	<script type="text/javascript" src="{{ url_for('logviewer.static', filename='socket.io.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/jquery-1.8.2.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery-ui.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.core.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.widget.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.mouse.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.sortable.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.selectable.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
+	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
+	
+    <!-- DataTables -->
+    <!--<script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>-->
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/jquery.dataTables.js')}}"></script>
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColVis-1.0.8/media/js/ColVis.js')}}"></script>
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColReorder-1.0.8/media/js/ColReorder.js')}}"></script>
+	
+	<style type="text/css">
+		.alignRight {text-align: right;}
+		.alignCentre {text-align: center;}
+		.alignLeft {text-align: left;}
+	</style>
+	
+	<script type="text/javascript">
+		WEB_SOCKET_SWF_LOCATION = "{{ url_for('logviewer.static', filename='WebSocketMain.swf')}}";
+		WEB_SOCKET_DEBUG = true;
+		
+		function zip(arrays) {
+			return arrays[0].map(function(_,i){
+				return arrays.map(function(array){return array[i]})
+			});
+		}
+		
+		// socket.io specific code
+		var socket = io.connect('/logviewer');
+        var fileTableRows = {};
+
+        var index=1;        		
+		var globallogfiles=[];
+		
+		socket.on('connect', function(){
+			console.log('connect');
+		});
+		socket.on('logfiles', function(logfiles){
+			globallogfiles = logfiles;
+			logfilelist = [];
+			for (i=0;i<logfiles.length;i++) {
+				reducedname = logfiles[i].split("/").slice(-4,-2)
+				reducedname.push(logfiles[i].split("/").slice(-1))
+				
+				logfilelist.push({label: logfiles[i], value : reducedname.join(':')});
+			}
+			$( "#logname" ).autocomplete( "option", "source", logfilelist);
+		});
+		socket.on('loadlog', function(data){
+			
+			state = data.state
+			
+			if ($('#logfiletable').hasClass('dataTable')) {
+				//$('#logfiletable').dataTable().fnDestroy();
+				$('#logfiletable').remove();
+				$('#logfile').html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="logfiletable"></table>');
+			}
+			
+			columns = [{ "sTitle": "No.", "sWidth" : "10px"}, {"sTitle" : "Filename", "bVisible": true}];
+			
+			order = [0,1];
+			for (i=2;i<(data.keys).length + 1;i++) {order.push(i)};
+			extraKeysCount = 0;
+			
+			for (i=0;i<(data.keys).length;i++) {
+				key = data.keys[i];
+				if (state.hasOwnProperty(key)) {
+				    Visible = state[key].Visible;
+					order[state[key].Position]=i+2;
+				} else {
+					Visible = false;
+					order[state.length + extraKeysCount] = state.length + extraKeysCount;
+					extraKeysCount++;
+				}
+				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true});
+			}
+			
+			oTable = $('#logfiletable').dataTable( {
+				"bJQueryUI" : true,
+				"sDom": 'RC<"clear">lfrtip',
+				"sPaginationType": "full_numbers",
+				"oColVis": {
+					"fnStateChange" : function(iC, bV){
+						savestate();
+					}
+				},
+				"oColReorder": {
+					"aiOrder" : order,
+					"iFixedColumns" : 2,
+					"fnReorderCallback" : function(){
+						savestate();
+					}
+				},
+				"aaSorting": [[0, "desc"]],
+				"aaData" : data.data,
+				"aoColumns": columns,
+			} );
+		});
+		
+		function savestate() {
+			aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
+			state = {}
+			for (colNum in aoColumns) {
+				column = aoColumns[colNum];
+				state[column.sTitle] = {'Position': colNum, 'Visible' : column.bVisible};				
+			}
+			socket.emit('state', state);
+		}
+		
+//		socket.on('newresults', function(filename, results){
+//            var data = {AutoRG_RG: '-',AutoRG_RGE: '-',AutoRG_I0: '-',AutoRG_I0E: '-',AutoRG_Start: '-',AutoRG_End: '-', AutoRG_Quality: '-',AutoRG_ValidFlag: '-', PorodVolume: '-' };
+//            for (key in results){
+//                if (!results.hasOwnProperty(key)){
+//                    continue;
+//                }
+//                data[key]=results[key];
+//            }
+//
+//            if (filename in fileTableRows){
+//                indexOld = $('#reportTable').dataTable().fnGetData((fileTableRows[filename])[0],0)
+//                $('#reportTable').dataTable().fnUpdate(                
+//                [indexOld, filename, data.AutoRG_RG, data.AutoRG_RGE, data.AutoRG_I0, data.AutoRG_I0E, data.AutoRG_Start, data.AutoRG_End, data.AutoRG_Quality, data.AutoRG_ValidFlag, data.PorodVolume], (fileTableRows[filename])[0]);
+//            }
+//            else {
+//                position = $('#reportTable').dataTable().fnAddData(
+//                [index,filename,data.AutoRG_RG,data.AutoRG_RGE,data.AutoRG_I0,data.AutoRG_I0E,data.AutoRG_Start,data.AutoRG_End,data.AutoRG_Quality,data.AutoRG_ValidFlag,data.PorodVolume]);
+//                fileTableRows[filename]=position;
+//                index+=1;    
+//            }});
+		
+		$(function() {
+			
+			$(document).ready(function(){
+				
+				$("#logname").autocomplete({minLength:0})
+					.focus(function(){$(this).autocomplete('search', '')});
+				
+				$("#load").click(function(){
+					
+					logfile = '';
+					list = $("#logname").autocomplete("option","source");
+					for (i=0;i<list.length;i++) {
+						if (list[i].value == $("#logname").val()) {
+							logfile = list[i].label;
+						}
+					}
+					
+					if (globallogfiles.indexOf(logfile) == -1) {
+						alert("Unknown logfile");
+						return
+					}
+					socket.emit("load",logfile);
+				});
+
+			});
+
+		});
+	</script>
+</head>
+<body>
+
+<H1>Log Viewer</H1>
+<label for="logname">Log File: </label>
+<input id="logname" style="width: 200px;"></input>
+<button id="load">Load</button>
+<p></p>
+<div id="logfile" class="demo_jui" style="width:900px">
+	<table cellpadding="0" cellspacing="0" border="0" class="display" id="logfiletable"></table>
+</div>
+</body>
+</html>
