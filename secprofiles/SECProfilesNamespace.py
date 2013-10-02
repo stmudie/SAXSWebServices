@@ -6,8 +6,8 @@ import redis
 from dat import DatFile
 import dat
 
-#r= redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
-r= redis.StrictRedis(host='localhost', port=6379, db=0)
+r= redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
+#r= redis.StrictRedis(host='localhost', port=6379, db=0)
 
 class SECProfilesNamespace(BaseNamespace):
     def __init__(self, *args, **kwargs):
@@ -30,12 +30,16 @@ class SECProfilesNamespace(BaseNamespace):
         
         bufferDats = []
         filename = splitext(self.activeFile)[0]
-        bufferNames = ['{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(bufferrange[0],bufferrange[1])]
+        bufferNames = ['{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(bufferrange[0],bufferrange[1])]
         
         count = 0
         for name in bufferNames:
             count = count + 1
-            bufferDats.append(DatFile(name))
+            try:
+                bufferDats.append(DatFile(name))
+            except Exception:
+                self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}.".format(name)})
+            
             if count%10 == 0 or count == len(bufferNames):
                 self.emit('Buffer_Load', round(100*count/len(bufferNames),2))
         self.avBufferDat = dat.average(dat.rejection(bufferDats))
@@ -48,15 +52,28 @@ class SECProfilesNamespace(BaseNamespace):
         
         for profileNumber in range(data['range'][0],data['range'][1]):
             if (data['subtract'] == False):
-                sampleDat = DatFile('{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4)))
+                try:
+                    sampleDat = DatFile('{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4)))
+                except Exception:
+                   self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(basename(filename),str(profileNumber).zfill(4))})
+                   continue
+                
             else :
                 if data['bufferrange'][0] == -1 and data['bufferrange'][1] == -1:
-                    sampleDat = DatFile('{}_{}.dat'.format(filename,str(profileNumber).zfill(4)))
+                    try:
+                        sampleDat = DatFile('{0}_{1}.dat'.format(filename,str(profileNumber).zfill(4)))
+                    except Exception:
+                        self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(filename,str(profileNumber).zfill(4))})
+                        continue
                 else :
                     self.updateAverageBuffer(data['bufferrange'])
-                    sampleDat = dat.subtract(DatFile('{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4))),self.avBufferDat)
+                    try:
+                        sampleDat = dat.subtract(DatFile('{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4))),self.avBufferDat)
+                    except Exception:
+                        self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(basename(filename),str(profileNumber).zfill(4))})
+                        continue
         
-            profiles.append({'filename': '{}_{}.dat'.format(basename(filename),str(profileNumber).zfill(4)), 'profile': zip(sampleDat.q, sampleDat.intensities, sampleDat.errors)})
+            profiles.append({'filename': '{0}_{1}.dat'.format(basename(filename),str(profileNumber).zfill(4)), 'profile': zip(sampleDat.q, sampleDat.intensities, sampleDat.errors)})
                 
         self.emit('AllSampleProfiles',profiles)
     
@@ -66,15 +83,25 @@ class SECProfilesNamespace(BaseNamespace):
         profileNumber = data['position']
         
         if (data['subtract'] == False):
-            sampleDat = DatFile('{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4)))
+            try:
+                sampleDat = DatFile('{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4)))
+            except Exception:
+                self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(basename(filename),str(profileNumber).zfill(4))})
+            
         else :
             if data['bufferrange'][0] == -1 and data['bufferrange'][1] == -1:
-                    sampleDat = DatFile('{}_{}.dat'.format(filename,str(profileNumber).zfill(4)))
+                    try:
+                        sampleDat = DatFile('{0}_{1}.dat'.format(filename,str(profileNumber).zfill(4)))
+                    except Exception:
+                        self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(filename,str(profileNumber).zfill(4))})
+                    
             else :
                 self.updateAverageBuffer(data['bufferrange'])
-                sampleDat = dat.subtract(DatFile('{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4))),self.avBufferDat)
-        
-        
+                try:
+                    sampleDat = dat.subtract(DatFile('{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4))),self.avBufferDat)
+                except Exception:
+                    self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(basename(filename),str(profileNumber).zfill(4))})
+         
         profile = zip(sampleDat.q, sampleDat.intensities, sampleDat.errors)
         self.sendSAXSProfile('Profile',{'filename': filename, 'profile': profile})
     
@@ -86,12 +113,16 @@ class SECProfilesNamespace(BaseNamespace):
 
         filename = splitext(self.activeFile)[0]
         sampleDats = []       
-        sampleNames = ['{}/raw_dat/{}_{}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(data['sample'][0],data['sample'][1])]
+        sampleNames = ['{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(data['sample'][0],data['sample'][1])]
         
         count = 0
         for name in sampleNames:
             count = count + 1
-            sampleDats.append(DatFile(name))
+            try:
+                sampleDats.append(DatFile(name))
+            except Exception:
+                self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}.".format(name)})
+            
             if count%10 == 0 or count == len(sampleNames):
                 self.emit('Sample_Load', round(100*count/len(sampleNames),2))
             
@@ -106,12 +137,11 @@ class SECProfilesNamespace(BaseNamespace):
     def on_SaveAverage(self, filename):
         print 'save'
         rawfilename = splitext(self.activeFile)[0]
-        self.avSampleDat.save('{}/analysis/{}.dat'.format(dirname(dirname(rawfilename)),filename))
+        self.avSampleDat.save('{0}/analysis/{1}.dat'.format(dirname(dirname(rawfilename)),filename))
     
     def sendProfile(self, name, filter_on_quality = 0):
-        
         try:
-            data = pickle.loads(r.get('pipeline:sec:{}:Rg'.format(self.activeFile)))
+            data = pickle.loads(r.get('pipeline:sec:{0}:Rg'.format(self.activeFile)))
         except TypeError:
             self.emit('ErrorMessage',{'title': "Error", 'message': "No data in database."})
             return
