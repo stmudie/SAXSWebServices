@@ -66,7 +66,8 @@
 			console.log('connect');
 		});
 		socket.on('logfiles', function(logfiles){
-			globallogfiles = logfiles;
+			console.log(logfiles);
+                        globallogfiles = logfiles;
 			logfilelist = [];
 			for (i=0;i<logfiles.length;i++) {
 				reducedname = logfiles[i].split("/").slice(-4,-2)
@@ -77,9 +78,9 @@
 			$( "#logname" ).autocomplete( "option", "source", logfilelist);
 		});
 		socket.on('loadlog', function(data){
-			
+		        	
 			state = data.state
-			
+		        console.log('here1');	
 			if ($('#logfiletable').hasClass('dataTable')) {
 				//$('#logfiletable').dataTable().fnDestroy();
 				$('#logfiletable').remove();
@@ -104,6 +105,7 @@
 				}
 				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true});
 			}
+		        console.log('here21');	
 			
 			oTable = $('#logfiletable').dataTable( {
 				"bJQueryUI" : true,
@@ -179,6 +181,7 @@
 						alert("Unknown logfile");
 						return
 					}
+					console.log(logfile);
 					socket.emit("load",logfile);
 				});
 

@@ -42,7 +42,7 @@
 	#selecttools {margin-bottom: 5px; float:left;}
 	#sortableHead { list-style-type: none; float: left; margin: 0; padding: 0; width: 1450px; }
 	#sortableRowNames {list-style-type: none; float: left; margin: 0; margin-right: 55px; padding: 0; width: 50px;}
-	#sortable { list-style-type: none; float: left; margin: 0; padding: 0; width: 1350px; }
+	#sortable { list-style-type: none; float: left; margin: 0; padding: 0; width: 1300px; }
 	#sortableHead li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 45px; font-size: 4em; text-align: center;}
 	#sortableRowNames li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px; font-size: 4em; text-align: center;}
 	#sortable li { margin: 0px 0px 0px 0; padding: 1px; float: left; width: 100px; height: 125px;  text-align: center; border-radius: 10px;}
@@ -107,10 +107,6 @@
 			$(".sampleName").each(function(index){
 				$(this).val(data.sampleNames[index]).change();
 			});
-			$(".sampleType").each(function(index){
-				$(this).val(data.sampleType[index]).change();
-				//sampleTypeColour($(this.parentNode),data.sampleType[index]);
-			});
 			$(".sampleConc").each(function(index){
 				$(this).val(data.sampleConc[index]).change();
 				//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
@@ -121,6 +117,10 @@
 			});
 			$(".washType").each(function(index){
 				$(this).val(data.washType[index]).change();
+			});
+			$(".sampleType").each(function(index){
+				$(this).val(data.sampleType[index]).change();
+				//sampleTypeColour($(this.parentNode),data.sampleType[index]);
 			});
 			
 			$(".sortableOrder li").each(function(){
@@ -673,7 +673,7 @@
 
 <a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
 
-<div class="wellPlates" style="width:1550px">
+<div class="wellPlates" style="width:1500px">
 
 <div id="tabs">
 	<ul>
@@ -726,8 +726,8 @@
 						<input type='text' class=sampleName placeholder="sample name">
 						<!--<label for="spinner" size='10'>Select a value:</label> -->
 						
-							<input id="{{ well}}_conc" class="sampleConc" style="margin-top: 0;" placeholder="conc" onkeypress="return isNumberKey(event,'{{ well}}_conc')">
-							<input id="{{ well}}_mw" class="sampleMW" style="margin-top: 0;" placeholder="MW" onkeypress="return isNumberKey(event,'{{ well}}_mw')">
+							<input id="{{ well}}_conc" class="sampleConc" style="margin-top: 0; width: 35px;" placeholder="conc" onkeypress="return isNumberKey(event,'{{ well}}_conc')">
+							<input id="{{ well}}_mw" class="sampleMW" style="margin-top: 0; width: 35px" placeholder="MW" onkeypress="return isNumberKey(event,'{{ well}}_mw')">
 						
 						<select id="{{ well }}_sampleType" class="sampleType">
 								<option disabled selected value = "-1">Type</option>

@@ -18,7 +18,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
             self.state = ''
     
     def find_logfiles(self, ):
-        for root, dirs, files in os.walk("/data/pilatus1M/"):
+        for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/Law_7085"):
             if 'images' in dirs:
                 print 'images'
                 index = dirs.index('images')
@@ -34,6 +34,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         r.set('logviewer:state', pickle.dumps(state));
     
     def on_load(self, logfile):
+        print 'here'
         with open(logfile, 'r') as f:
             xml_data = f.read()
         xml_data = '<?xml version="1.0" encoding="UTF-8"?><scatterbrain><experiment>'+xml_data+'</experiment></scatterbrain>'
@@ -43,10 +44,12 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         
         keys = []
         files = []
+        print 'here1.5'
                 
         for logline in loglines:
             keys = keys + logline.keys()
         
+        print 'here2'
         # Remove duplicates
         keys = list(set(keys))
             
