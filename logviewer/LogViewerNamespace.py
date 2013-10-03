@@ -18,7 +18,8 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
             self.state = ''
     
     def find_logfiles(self, ):
-        for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/Law_7085"):
+        #for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/Law_7085"):
+        for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
             if 'images' in dirs:
                 print 'images'
                 index = dirs.index('images')
@@ -33,10 +34,10 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         self.state = state
         r.set('logviewer:state', pickle.dumps(state));
     
-    def on_load(self, logfile):
-        print 'here'
+    def load(self, logfile):
         with open(logfile, 'r') as f:
             xml_data = f.read()
+        
         xml_data = '<?xml version="1.0" encoding="UTF-8"?><scatterbrain><experiment>'+xml_data+'</experiment></scatterbrain>'
         scatterbrain = ET.XML(xml_data)
         experiment = scatterbrain.find('experiment')
@@ -44,12 +45,10 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         
         keys = []
         files = []
-        print 'here1.5'
                 
         for logline in loglines:
             keys = keys + logline.keys()
         
-        print 'here2'
         # Remove duplicates
         keys = list(set(keys))
             
@@ -62,15 +61,26 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
             data.append(record)
                 
         self.emit('loadlog', {'keys': keys, 'data' : data, 'state' : self.state})
+    
+    
+    def on_load(self, logfile):
+        g_load = self.spawn(self.load,logfile)
+        
 
-
-    def recv_connect(self):
-        print 'connect'
+    def sendloglist(self):
         logfiles = [log for log in self.find_logfiles() if (log.find('livelog') >= 0 and log.find('comments') == -1)]
         self.emit('logfiles',logfiles)
     
+
+    def recv_connect(self):
+        print 'connect'
+        
+        g_log = self.spawn(self.sendloglist)
+        
+    
     def recv_disconnect(self):
         print 'disconnect'
+        self.kill_local_jobs()
 
     def recv_message(self, message):
         print "PING!!!", message
