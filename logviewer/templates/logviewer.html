@@ -15,13 +15,9 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColVis-1.0.8/media/css/ColVis.css')}}">
 	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColReorder-1.0.8/media/css/ColReorder.css')}}">
 	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='jquery/ui/css/jquery-ui-1.8.4.custom.css')}}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='jquery/ui/css/demo_table_jui.css')}}">
-    <style>
-        table.dataTable tr.even td.invalidFlagEven { background-color: #FEEFF2; }
-        table.dataTable tr.odd td.invalidFlagOdd { background-color: #FEDFE4; }
-        table.dataTable tr.even td.invalidFlagEvenSorting { background-color: #FEDFE4; }
-        table.dataTable tr.odd td.invalidFlagOddSorting { background-color: pink; }
-    </style>    
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='css/logviewer.css')}}">
+	<link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
+	
 	<script type="text/javascript" src="{{ url_for('logviewer.static', filename='socket.io.js')}}"></script>
 	<script src="{{ url_for('logviewer.static', filename='jquery/jquery-1.8.2.js')}}"></script>
 	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery-ui.js')}}"></script>
@@ -33,21 +29,83 @@
 	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
 	<script src="{{ url_for('logviewer.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
 	
+	
     <!-- DataTables -->
     <!--<script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>-->
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/jquery.dataTables.js')}}"></script>
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColVis-1.0.8/media/js/ColVis.js')}}"></script>
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColReorder-1.0.8/media/js/ColReorder.js')}}"></script>
 	
+	<!-- Spinner -->
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='spin.min.js')}}"></script>
+	
+	
 	<style type="text/css">
+		body { background: #F2EFE1; margin:0px;}
+		h2 {display:inline-block;font-family: 'Capriola', sans-serif;}
+		.banner {margin-left: 0px;
+				 margin-bottom: 16px;
+				 padding-left: 17px;
+				 padding-bottom: 8px;
+				 padding-top: 1px;
+				 background: #C3DDBE;
+				 border-bottom: solid 3px;
+				 border-bottom-color: #9E9E9E;
+				 box-shadow: 0px 5px 3px #757575;
+		}
 		.alignRight {text-align: right;}
 		.alignCentre {text-align: center;}
 		.alignLeft {text-align: left;}
+		.ColVis { float: left;}
+		.ColVis_MasterButton {background:buttonface;
+						color: black;
+						border: 2px outset buttonface;
+						appearance:button;
+						-moz-appearance:button; /* Firefox */
+						-webkit-appearance:button; /* Safari and Chrome */
+		}
+		.tools { background-color: #F5F5F5;
+				 height: 30px;
+				 width: 50%;
+				 padding: 5px;
+			     border: 1px solid #CCCCCC;
+		}
 	</style>
 	
 	<script type="text/javascript">
 		WEB_SOCKET_SWF_LOCATION = "{{ url_for('logviewer.static', filename='WebSocketMain.swf')}}";
 		WEB_SOCKET_DEBUG = true;
+		
+		// socket.io specific code
+		var socket = io.connect('/logviewer');
+        var fileTableRows = {};
+		
+		var index=1;        		
+		var globallogfiles=[];
+		
+		//spinner
+		var opts = {
+			lines: 11, // The number of lines to draw
+			length: 40, // The length of each line
+			width: 10, // The line thickness
+			radius: 26, // The radius of the inner circle
+			corners: 1, // Corner roundness (0..1)
+			rotate: 90, // The rotation offset
+			direction: 1, // 1: clockwise, -1: counterclockwise
+			color: '#333333', // #rgb or #rrggbb or array of colors
+			speed: 1, // Rounds per second
+			trail: 46, // Afterglow percentage
+			shadow: true, // Whether to render a shadow
+			hwaccel: false, // Whether to use hardware acceleration
+			className: 'spinner', // The CSS class to assign to the spinner
+			zIndex: 2e9, // The z-index (defaults to 2000000000)
+			top: 'auto', // Top position relative to parent in px
+			left: 'auto' // Left position relative to parent in px
+		};
+		
+		var spinner = null;
+		var spinner_div = 0;
+		
 		
 		function zip(arrays) {
 			return arrays[0].map(function(_,i){
@@ -55,34 +113,12 @@
 			});
 		}
 		
-		// socket.io specific code
-		var socket = io.connect('/logviewer');
-        var fileTableRows = {};
-
-        var index=1;        		
-		var globallogfiles=[];
-		
-		socket.on('connect', function(){
-			console.log('connect');
-		});
-		socket.on('logfiles', function(logfiles){
-			console.log(logfiles);
-                        globallogfiles = logfiles;
-			logfilelist = [];
-			for (i=0;i<logfiles.length;i++) {
-				reducedname = logfiles[i].split("/").slice(-4,-2)
-				reducedname.push(logfiles[i].split("/").slice(-1))
-				
-				logfilelist.push({label: logfiles[i], value : reducedname.join(':')});
-			}
-			$( "#logname" ).autocomplete( "option", "source", logfilelist);
-		});
-		socket.on('loadlog', function(data){
-		        	
+		function loadlog(data){
+			spinner.stop(spinner_div);
+			$('#wait').hide();
 			state = data.state
-		        console.log('here1');	
+
 			if ($('#logfiletable').hasClass('dataTable')) {
-				//$('#logfiletable').dataTable().fnDestroy();
 				$('#logfiletable').remove();
 				$('#logfile').html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="logfiletable"></table>');
 			}
@@ -105,11 +141,11 @@
 				}
 				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true});
 			}
-		        console.log('here21');	
 			
 			oTable = $('#logfiletable').dataTable( {
 				"bJQueryUI" : true,
-				"sDom": 'RC<"clear">lfrtip',
+				"sDom": 'R<"clear"><"tools"Cf><"clear">lrtip',
+				"iDisplayLength" : 25,
 				"sPaginationType": "full_numbers",
 				"oColVis": {
 					"fnStateChange" : function(iC, bV){
@@ -126,7 +162,40 @@
 				"aaSorting": [[0, "desc"]],
 				"aaData" : data.data,
 				"aoColumns": columns,
-			} );
+			});
+		}
+		
+		
+		socket.on('connect', function(){
+			console.log('connect');
+			spinner = new Spinner(opts).spin(spinner_div);
+		});
+		socket.on('logfiles', function(logfiles){
+
+            globallogfiles = logfiles;
+			logfilelist = [];
+			for (i=0;i<logfiles.length;i++) {
+				reducedname = logfiles[i].split("/").slice(-4,-2)
+				reducedname.push(logfiles[i].split("/").slice(-1))
+				
+				logfilelist.push({label: logfiles[i], value : reducedname.join(':')});
+			}
+			$( "#logname" ).autocomplete( "option", "source", logfilelist);
+			spinner.stop(spinner_div);
+			$('#wait').hide();
+		});
+		
+		socket.on('loglines', function(data){
+			if ($('#logfiletable').hasClass('dataTable')){
+				$('#logfiletable').Datatable().funAddData(data.data)
+			} else {
+				loadlog(data);
+			}
+			
+		});
+		
+		socket.on('loadlog', function(data){
+		    loadlog(data);
 		});
 		
 		function savestate() {
@@ -138,27 +207,6 @@
 			}
 			socket.emit('state', state);
 		}
-		
-//		socket.on('newresults', function(filename, results){
-//            var data = {AutoRG_RG: '-',AutoRG_RGE: '-',AutoRG_I0: '-',AutoRG_I0E: '-',AutoRG_Start: '-',AutoRG_End: '-', AutoRG_Quality: '-',AutoRG_ValidFlag: '-', PorodVolume: '-' };
-//            for (key in results){
-//                if (!results.hasOwnProperty(key)){
-//                    continue;
-//                }
-//                data[key]=results[key];
-//            }
-//
-//            if (filename in fileTableRows){
-//                indexOld = $('#reportTable').dataTable().fnGetData((fileTableRows[filename])[0],0)
-//                $('#reportTable').dataTable().fnUpdate(                
-//                [indexOld, filename, data.AutoRG_RG, data.AutoRG_RGE, data.AutoRG_I0, data.AutoRG_I0E, data.AutoRG_Start, data.AutoRG_End, data.AutoRG_Quality, data.AutoRG_ValidFlag, data.PorodVolume], (fileTableRows[filename])[0]);
-//            }
-//            else {
-//                position = $('#reportTable').dataTable().fnAddData(
-//                [index,filename,data.AutoRG_RG,data.AutoRG_RGE,data.AutoRG_I0,data.AutoRG_I0E,data.AutoRG_Start,data.AutoRG_End,data.AutoRG_Quality,data.AutoRG_ValidFlag,data.PorodVolume]);
-//                fileTableRows[filename]=position;
-//                index+=1;    
-//            }});
 		
 		$(function() {
 			
@@ -182,23 +230,38 @@
 						return
 					}
 					console.log(logfile);
+					$('#wait').show();
+					spinner.spin(spinner_div);
 					socket.emit("load",logfile);
 				});
 
+				$("loadlive").click(function(){
+					$('#wait').show();
+					spinner.spin(spinner_div);
+					socket.emit("load",'Current');
+				})
+				
+				spinner_div = $("#spinwait").get(0);
+				
 			});
 
 		});
 	</script>
 </head>
 <body>
-
-<H1>Log Viewer</H1>
-<label for="logname">Log File: </label>
-<input id="logname" style="width: 200px;"></input>
-<button id="load">Load</button>
-<p></p>
-<div id="logfile" class="demo_jui" style="width:900px">
-	<table cellpadding="0" cellspacing="0" border="0" class="display" id="logfiletable"></table>
-</div>
+	<div class="banner">
+		<H2>Log Viewer</H2>
+		<button id="loadlive" style="margin-left: 15px;">Load Live Log</button>
+		<span style="background-color: rgba(100,100,100,0.3);padding-bottom:12px;padding-top:12px;padding-right:3px;">
+			<input id="logname" style="width: 350px; margin-left: 10px;font-size: larger;"></input>
+			<button id="load">Load Completed Log</button>
+		</span>
+	</div>
+	<div id="logfile" style="width:900px;margin-left: 15px;">
+		<table cellpadding="0" cellspacing="0" border="0" class="display" id="logfiletable"></table>
+	</div>
+	<div id="wait">
+		<div id="spinwait" style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-color: rgba(128,128,128,0.25);"></div>
+	</div>
 </body>
 </html>
