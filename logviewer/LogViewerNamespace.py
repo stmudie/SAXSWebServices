@@ -3,8 +3,8 @@ from socketio.mixins import BroadcastMixin
 import redis
 import cPickle as pickle
 import os
-import xml.etree.ElementTree as ET
-#import cElementTree as ET
+#import xml.etree.ElementTree as ET
+import xml.etree.cElementTree as ET
 
 r = redis.StrictRedis(host='localhost', port=6379, db=1)
 
@@ -18,8 +18,8 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
             self.state = ''
     
     def find_logfiles(self, ):
-        #for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/Law_7085"):
-        for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
+        for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/Xie_7069"):
+        #for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
             if 'images' in dirs:
                 print 'images'
                 index = dirs.index('images')

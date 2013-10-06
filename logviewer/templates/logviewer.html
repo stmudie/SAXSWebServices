@@ -103,7 +103,8 @@
 					order[state.length + extraKeysCount] = state.length + extraKeysCount;
 					extraKeysCount++;
 				}
-				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true});
+				if (key == 'FilePluginFileName'){ searchable = false } else { searchable = true};
+				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true, "bSearchable" : searchable});
 			}
 		        console.log('here21');	
 			
