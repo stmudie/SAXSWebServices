@@ -58,8 +58,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
 
         for row, logline in enumerate(loglines):
             record = [row,os.path.basename(logline.text)]
-            for key in keys:
-                record.append(logline.get(key))   
+            record = record + [logline.get(key) if key in logline.keys() else '' for key in keys]
             data.append(record)
                 
         self.emit('loadlog', {'keys': keys, 'data' : data, 'state' : self.state})
@@ -91,16 +90,20 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         if num <= 0:
             return
         
-        loglines =[]
         keys = []
         for row in range(self.loglength+1,num+1):
             linedata = rl.hgetall('logline:%d' % (row,))
-            record = [row,os.path.basename(linedata['ImageLocation'])]
-            record = record + [linedata[key] for key in linedata]
-            loglines.append(record)
 	    keys = keys + list(linedata)
-
+            
         keys = list(set(keys))
+        
+        loglines =[]
+        for row in range(self.loglength+1,num+1):
+            linedata = rl.hgetall('logline:%d' % (row,))
+            record = [row,os.path.basename(linedata['ImageLocation'])]
+            record = record + [linedata[key] if key in list(linedata) else '' for key in keys]
+            loglines.append(record)
+
         self.emit('loglines',{'keys': keys, 'data' : loglines, 'state' : self.state})
         self.loglength = num
     
