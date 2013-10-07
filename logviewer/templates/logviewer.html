@@ -12,8 +12,9 @@
 		@import "{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/css/demo_table.css')}}";
 	</style>-->
 	<link rel="stylesheet" type="text/css" href="">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColVis-1.0.8/media/css/ColVis.css')}}">
-	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColReorder-1.0.8/media/css/ColReorder.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/ColVis/media/css/ColVis.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/ColReorder/media/css/ColReorder.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/css/TableTools.css')}}">
 	<link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='jquery/ui/css/jquery-ui-1.8.4.custom.css')}}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='css/logviewer.css')}}">
 	<link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
@@ -33,8 +34,9 @@
     <!-- DataTables -->
     <!--<script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>-->
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/jquery.dataTables.js')}}"></script>
-	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColVis-1.0.8/media/js/ColVis.js')}}"></script>
-	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/ColReorder-1.0.8/media/js/ColReorder.js')}}"></script>
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/ColVis/media/js/ColVis.js')}}"></script>
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/ColReorder/media/js/ColReorder.js')}}"></script>
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/js/TableTools.js')}}"></script>
 	
 	<!-- Spinner -->
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='spin.min.js')}}"></script>
