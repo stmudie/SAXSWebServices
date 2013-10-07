@@ -188,7 +188,7 @@
 		
 		socket.on('loglines', function(data){
 			if ($('#logfiletable').hasClass('dataTable')){
-				$('#logfiletable').Datatable().funAddData(data.data)
+				$('#logfiletable').dataTable().fnAddData(data.data)
 			} else {
 				loadlog(data);
 			}
@@ -236,9 +236,14 @@
 					socket.emit("load",logfile);
 				});
 
-				$("loadlive").click(function(){
+				$("#loadlive").click(function(){
 					$('#wait').show();
 					spinner.spin(spinner_div);
+					
+					if ($('#logfiletable').hasClass('dataTable')) {
+						$('#logfiletable').remove();
+						$('#logfile').html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="logfiletable"></table>');
+					}
 					socket.emit("load",'Current');
 				})
 				
