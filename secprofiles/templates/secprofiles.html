@@ -614,7 +614,7 @@ $(function () {
 		});
 		
 		$(".spinner").spinner({
-			spin: function( event, ui) {
+			stop: function( event, ui) {
 				$(this).trigger('allchanges');
 			}
 		}).keyup(function(event){
@@ -628,8 +628,9 @@ $(function () {
 				updateRectangle(highlightBufRec,highlightBufRecLabel,$('#LowBufSpin').val(),$('#HighBufSpin').val());
 			}
 			if (this.className.indexOf('sample') >=0) {
-				LowSelect = $('#LowBufSpin').val();
-				HighSelect = $('#HighBufSpin').val();
+				LowSelect = $('#LowSpin').val();
+				HighSelect = $('#HighSpin').val();
+				console.log($('#LowSpin').val(), $('#HighSpin').val());
 				updateRectangle(highlightRec,highlightRecLabel,$('#LowSpin').val(),$('#HighSpin').val());
 			}
 		});

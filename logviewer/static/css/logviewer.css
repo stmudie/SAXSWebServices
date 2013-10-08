@@ -138,7 +138,8 @@ table.display thead th div.DataTables_sort_wrapper span {
 }
 
 .dataTables_filter {
-	float: right;
+	float: left;
+        margin-left: 20px;
 	text-align: right;
 }
 
@@ -150,6 +151,10 @@ table.display thead th div.DataTables_sort_wrapper span {
 .dataTables_paginate {
 	float: right;
 	text-align: right;
+}
+.div.DTTT_container {
+        float: left;
+	margin-right: 20px;
 }
 
 

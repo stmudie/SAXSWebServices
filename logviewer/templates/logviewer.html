@@ -36,6 +36,7 @@
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/media/js/jquery.dataTables.js')}}"></script>
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/ColVis/media/js/ColVis.js')}}"></script>
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/ColReorder/media/js/ColReorder.js')}}"></script>
+	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/js/ZeroClipboard.js')}}"></script>
 	<script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/js/TableTools.js')}}"></script>
 	
 	<!-- Spinner -->
@@ -68,7 +69,7 @@
 		}
 		.tools { background-color: #F5F5F5;
 				 height: 30px;
-				 width: 50%;
+				 width: 700px;
 				 padding: 5px;
 			     border: 1px solid #CCCCCC;
 		}
@@ -108,6 +109,7 @@
 		var spinner = null;
 		var spinner_div = 0;
 		
+                var viscolumns = [0];
 		
 		function zip(arrays) {
 			return arrays[0].map(function(_,i){
@@ -130,7 +132,8 @@
 			order = [0,1];
 			for (i=2;i<(data.keys).length + 1;i++) {order.push(i)};
 			extraKeysCount = 0;
-			
+		
+                        viscolumns = [];	
 			for (i=0;i<(data.keys).length;i++) {
 				key = data.keys[i];
 				if (state.hasOwnProperty(key)) {
@@ -141,16 +144,33 @@
 					order[state.length + extraKeysCount] = state.length + extraKeysCount;
 					extraKeysCount++;
 				}
+                                if (Visible) {viscolumns.push(key)};
 				if (key == 'FilePluginFileName'){ searchable = false } else { searchable = true};
 				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true, "bSearchable" : searchable});
 			}
 			
 			oTable = $('#logfiletable').dataTable( {
 				"bJQueryUI" : true,
-				"sDom": 'R<"clear"><"tools"Cf><"clear">lrtip',
+				"sDom": 'R<"clear"><"tools"CfT><"clear">lrtip',
 				"iDisplayLength" : 25,
 				"sPaginationType": "full_numbers",
-				"oColVis": {
+                                "oTableTools": {
+					"sSwfPath": "{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/swf/copy_csv_xls_pdf.swf')}}",
+                                        "aButtons" : [
+						"copy",
+						"csv",
+						{
+							"sExtends":"xls",
+                                                        "fnClick" : function(nButton,oConfig,oFlash){
+                                                        	//oConfig.mColumns = viscolumns;
+								this.fnSetText( oFlash, this.fnGetTableData(oConfig));
+							}
+						},
+						"pdf",
+						"print"
+					]
+				},
+                                "oColVis": {
 					"fnStateChange" : function(iC, bV){
 						savestate();
 					}
@@ -204,11 +224,14 @@
 		function savestate() {
 			aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
 			state = {}
+                        viscolumns = [];
 			for (colNum in aoColumns) {
 				column = aoColumns[colNum];
-				state[column.sTitle] = {'Position': colNum, 'Visible' : column.bVisible};				
+				state[column.sTitle] = {'Position': colNum, 'Visible' : column.bVisible};
+                                if (column.bVisible){viscolumns.push(column.sTitle)};				
 			}
 			socket.emit('state', state);
+                        console.log(viscolumns);
 		}
 		
 		$(function() {
