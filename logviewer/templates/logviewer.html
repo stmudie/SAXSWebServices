@@ -81,7 +81,7 @@
 		
 		// socket.io specific code
 		var socket = io.connect('/logviewer');
-        var fileTableRows = {};
+                var fileTableRows = {};
 		
 		var index=1;        		
 		var globallogfiles=[];
@@ -109,13 +109,25 @@
 		var spinner = null;
 		var spinner_div = 0;
 		
-                var viscolumns = [0];
+                var viscolumns = [];
 		
 		function zip(arrays) {
 			return arrays[0].map(function(_,i){
 				return arrays.map(function(array){return array[i]})
 			});
 		}
+                        
+                function correctcolumns(oConfig){
+		        aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
+                        viscolumnnums = [];
+                        for (i=0;i<aoColumns.length;i++){
+                                if (viscolumns.indexOf(aoColumns[i].sTitle)!=-1){
+                                        viscolumnnums.push(i);
+                                }
+                        }
+                                oConfig.mColumns = viscolumnnums;
+                        
+                }
 		
 		function loadlog(data){
 			spinner.stop(spinner_div);
@@ -133,7 +145,7 @@
 			for (i=2;i<(data.keys).length + 1;i++) {order.push(i)};
 			extraKeysCount = 0;
 		
-                        viscolumns = [];	
+                        viscolumns = ['No.','Filename'];	
 			for (i=0;i<(data.keys).length;i++) {
 				key = data.keys[i];
 				if (state.hasOwnProperty(key)) {
@@ -148,7 +160,8 @@
 				if (key == 'FilePluginFileName'){ searchable = false } else { searchable = true};
 				columns.push({"sTitle" : key, "bVisible" : Visible, "sClass": "alignCentre", "bSortable" : true, "bSearchable" : searchable});
 			}
-			
+		
+
 			oTable = $('#logfiletable').dataTable( {
 				"bJQueryUI" : true,
 				"sDom": 'R<"clear"><"tools"CfT><"clear">lrtip',
@@ -158,15 +171,20 @@
 					"sSwfPath": "{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/swf/copy_csv_xls_pdf.swf')}}",
                                         "aButtons" : [
 						"copy",
-						"csv",
 						{
-							"sExtends":"xls",
+							"sExtends":"csv",
                                                         "fnClick" : function(nButton,oConfig,oFlash){
-                                                        	//oConfig.mColumns = viscolumns;
-								this.fnSetText( oFlash, this.fnGetTableData(oConfig));
+                                                                correctcolumns(oConfig);
+                                                                this.fnSetText( oFlash, this.fnGetTableData(oConfig));
 							}
 						},
-						"pdf",
+						//{
+						//	"sExtends":"pdf",
+                                                //        "fnClick" : function(nButton,oConfig,oFlash){
+                                                //                //correctcolumns(oConfig);
+                                                //                this.fnSetText( oFlash, this.fnGetTableData(oConfig));
+						//	}
+						//},
 						"print"
 					]
 				},
@@ -195,7 +213,7 @@
 		});
 		socket.on('logfiles', function(logfiles){
 
-            globallogfiles = logfiles;
+                globallogfiles = logfiles;
 			logfilelist = [];
 			for (i=0;i<logfiles.length;i++) {
 				reducedname = logfiles[i].split("/").slice(-4,-2)
@@ -210,7 +228,22 @@
 		
 		socket.on('loglines', function(data){
 			if ($('#logfiletable').hasClass('dataTable')){
-				$('#logfiletable').dataTable().fnAddData(data.data)
+                                reorderedData = [];
+			        aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
+                    
+                                order = [];
+                                for (i=0;i<aoColumns.length;i++){
+                                       order.push(aoColumns[i]._ColReorder_iOrigCol);
+                                }
+                                for (i=0;i<data.data.length;i++){
+                                        record = [];
+				        for (j=0;j<data.data[i].length;j++){
+	 				        record.push = data.data[i][order[i]]
+					}
+                                        reorderedData.push(record);
+                                }				
+
+                                $('#logfiletable').dataTable().fnAddData(reorderedData);
 			} else {
 				loadlog(data);
 			}
