@@ -90,16 +90,14 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         if num <= 0:
             return
         
-        keys = []
+        rawloglines = []
         for row in range(self.loglength+1,num+1):
-            linedata = rl.hgetall('logline:%d' % (row,))
-            keys = keys + list(linedata)
+            rawloglines.append(rl.hgetall('logline:%d' % (row,)))
+            
+        keys = list(set([x for keys in rawloglines for x in keys]))
 
-        keys = list(set(keys))
-        
-        loglines =[]
-        for row in range(self.loglength+1,num+1):
-            linedata = rl.hgetall('logline:%d' % (row,))
+        loglines = []        
+        for row, linedata in enumerate(rawloglines):
             record = [row,os.path.basename(linedata['ImageLocation'])]
             record = record + [linedata[key] if key in list(linedata) else '' for key in keys]
             loglines.append(record)
