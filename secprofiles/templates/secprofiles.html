@@ -58,7 +58,21 @@
 		color: white;
 		background:-webkit-linear-gradient(top, #30F41A, #33AA2A 5%, #277519, #39E81E 95%, #30F41A);
 	}
-	
+	.myPurpleButton {
+		height: 30px;
+		width: 90px;
+		font-size: small;
+		color: black;
+		font-weight: bold;
+		background:-webkit-linear-gradient(top, #7C29A5, #A81AEF 5%, #A11DE2, #7C29A5 95%, #7C29A5);
+	}
+	.myPurpleButton:hover {
+		color: white;
+	}
+	.myPurpleButton:active {
+		color: white;
+		background:-webkit-linear-gradient(top, #A81AEF, #7C29A5 5%, #531870, #A11DE2 95%, #A81AEF);
+	}
 	#SaveToo {
 		height: 30px;
 		width: 90px;
@@ -150,6 +164,9 @@ var LowBufSelect=-1;
 var HighBufSelect=-1;
 var zoomChange=0;
 var progressText='';
+var savefilename;
+var globalepn;
+var globalexp;
 
 var saxsProfileSettings = {
 	chart: {
@@ -390,6 +407,8 @@ socket.on('File_List', function(filelist){
 
 socket.on('Rg_Array', function(data) {
 	filename = data.filename;
+	globalepn = data.epn;
+	globalexp = data.exp;
 	Rg_Data = data.profile;
         raw_dat_chart.series[0].setData(Rg_Data);
 	raw_dat_chart.setTitle({text: filename});
@@ -571,8 +590,15 @@ $(function () {
 			});
 		$( "#SaveToo" ).button({disabled : false})
 			.click(function(){
-				socket.emit('SaveAverage',$("#Name").val())
+			    savefilename = $("#Name").val()
+				socket.emit('SaveAverage',savefilename)
 				$("#SaveDialog").dialog("close");
+			});
+		$( "#Analyse" ).button({disabled : false})
+			.click(function(){
+				$.get('http://127.0.0.1:8082/'+globalepn+'/'+globalexp+'/analysis/'+savefilename+'.dat', function(){
+					alert("success");
+				})
 			});
 		$( "#plotallsample" ).button({disabled : false})
 			.click(function(){
@@ -668,6 +694,7 @@ $(function () {
 	<input id="HighSpin" class="spinner sample" name="HighSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
 	<button id="Average" class="myGreenButton">Average</button></br>
 	<button id="Save" class="myOrangeButton">Save</button></br>
+	<button id="Analyse" class="myPurpleButton">Analyse</button></br>
 
 	<h3> Individual Plotting </h3>
 	<input type="checkbox" id="subtract" /><label for="subtract">Subtract Buffer</label><br>

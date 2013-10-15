@@ -68,7 +68,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         self.kill_local_jobs()
         self.loglength = 0
         if logfile == 'Current':
-            self.loadloglines(-1)
+            g_loadloglines = self.spawn(self.loadloglines(-1))
             g_rediswatch = self.spawn(self.rediswatch)
         else :
             g_load = self.spawn(self.load,logfile)
@@ -93,8 +93,8 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         keys = []
         for row in range(self.loglength+1,num+1):
             linedata = rl.hgetall('logline:%d' % (row,))
-	    keys = keys + list(linedata)
-            
+            keys = keys + list(linedata)
+
         keys = list(set(keys))
         
         loglines =[]

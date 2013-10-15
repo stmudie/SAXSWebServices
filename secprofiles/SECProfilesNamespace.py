@@ -6,8 +6,8 @@ import redis
 from dat import DatFile
 import dat
 
-r= redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
-#r= redis.StrictRedis(host='localhost', port=6379, db=0)
+#r= redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
+r= redis.StrictRedis(host='localhost', port=6379, db=0)
 
 class SECProfilesNamespace(BaseNamespace):
     def __init__(self, *args, **kwargs):
@@ -147,9 +147,13 @@ class SECProfilesNamespace(BaseNamespace):
             return
         
         namedict = {'Rg_Array': 1, 'I0_Array' : 2, 'Quality' : 3, 'HighQ_Array' : 4}
+        
+        exp = basename(dirname(dirname(self.activeFile)))
+        epn = basename(dirname(dirname(dirname(self.activeFile))))
+
         for n in name:
             array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0]
-            self.emit(n, {'filename': self.activeFile, 'profile':array})
+            self.emit(n, {'filename': self.activeFile, 'epn': epn, 'exp':exp, 'profile':array})
 
     def checkForNewRedisRgProfile(self):
         

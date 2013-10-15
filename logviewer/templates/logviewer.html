@@ -161,8 +161,8 @@
 						"csv",
 						{
 							"sExtends":"xls",
-                                                        "fnClick" : function(nButton,oConfig,oFlash){
-                                                        	//oConfig.mColumns = viscolumns;
+                                "fnClick" : function(nButton,oConfig,oFlash){
+                                oConfig.mColumns = viscolumns;
 								this.fnSetText( oFlash, this.fnGetTableData(oConfig));
 							}
 						},
