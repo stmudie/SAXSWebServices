@@ -232,18 +232,27 @@
 			        aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
                     
                                 order = [];
-                                for (i=0;i<aoColumns.length;i++){
+                                /*for (i=0;i<aoColumns.length;i++){
                                        order.push(aoColumns[i]._ColReorder_iOrigCol);
                                 }
                                 for (i=0;i<data.data.length;i++){
                                         record = [];
 				        for (j=0;j<data.data[i].length;j++){
-	 				        record.push = data.data[i][order[i]]
+	 				        record.push(data.data[i][order[j]]);
 					}
                                         reorderedData.push(record);
                                 }				
 
-                                $('#logfiletable').dataTable().fnAddData(reorderedData);
+                                $('#logfiletable').dataTable().fnAddData(reorderedData);*/
+                                for (i=0;i<data.data.length;i++){
+					record = [data.data[i][0],data.data[i][1]];
+					for (j=2;j<aoColumns.length;j++){
+						record.push(data.data[i][2+data.keys.indexOf(aoColumns[j].sTitle)]);
+					}
+					reorderedData.push(record);
+				}
+				$('#logfiletable').dataTable().fnAddData(reorderedData);
+
 			} else {
 				loadlog(data);
 			}

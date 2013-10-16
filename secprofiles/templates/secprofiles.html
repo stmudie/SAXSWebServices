@@ -596,8 +596,8 @@ $(function () {
 			});
 		$( "#Analyse" ).button({disabled : false})
 			.click(function(){
-				$.get('http://127.0.0.1:8082/'+globalepn+'/'+globalexp+'/analysis/'+savefilename+'.dat', function(){
-					alert("success");
+				$.get('https://aswebsaxs.synchrotron.org.au/runpipeline/'+globalepn+'/'+globalexp+'/analysis/'+savefilename+'.dat', function(){
+					alert("File " + savefilename + ".dat sent to pipeline.");
 				})
 			});
 		$( "#plotallsample" ).button({disabled : false})

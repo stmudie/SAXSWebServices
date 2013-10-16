@@ -68,7 +68,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         self.kill_local_jobs()
         self.loglength = 0
         if logfile == 'Current':
-            g_loadloglines = self.spawn(self.loadloglines(-1))
+            g_loadloglines = self.spawn(self.loadloglines,-1))
             g_rediswatch = self.spawn(self.rediswatch)
         else :
             g_load = self.spawn(self.load,logfile)
@@ -98,7 +98,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
 
         loglines = []        
         for row, linedata in enumerate(rawloglines):
-            record = [row,os.path.basename(linedata['ImageLocation'])]
+            record = [self.loglength+row,os.path.basename(linedata['ImageLocation'])]
             record = record + [linedata[key] if key in list(linedata) else '' for key in keys]
             loglines.append(record)
 
