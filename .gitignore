@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 *.pyc
 *~
 *.komodoproject
-=======
 .gitk*
 .idea/*
->>>>>>> 592020d31d62105e21bc129b1fa1660fcb79d2a3
 .DS_Store
+# Specific local config for testing
+localconfig.py

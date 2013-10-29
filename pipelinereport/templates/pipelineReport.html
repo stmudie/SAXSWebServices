@@ -7,6 +7,7 @@
     <!-- DataTables CSS -->
     <!--<link rel="stylesheet" type="text/css" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css"> -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('pipelinereport.static', filename='DataTables-1.9.4/media/css/jquery.dataTables.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/css/TableTools.css')}}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('pipelinereport.static', filename='jquery/ui/css/jquery-ui-1.8.4.custom.css')}}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('pipelinereport.static', filename='jquery/ui/css/demo_table_jui.css')}}">
     <style>
@@ -15,13 +16,18 @@
         table.dataTable tr.even td.invalidFlagEvenSorting { background-color: #FEDFE4; }
         table.dataTable tr.odd td.invalidFlagOddSorting { background-color: pink; }
     </style>    
-	<script type="text/javascript" src="{{ url_for('pipelinereport.static', filename='socket.io.js')}}"></script>
-	<script src="{{ url_for('pipelinereport.static', filename='jquery/jquery-1.8.2.js')}}"></script>
+    <script type="text/javascript" src="{{ url_for('pipelinereport.static', filename='socket.io.js')}}"></script>
+    <script src="{{ url_for('pipelinereport.static', filename='jquery/jquery-1.8.2.js')}}"></script>
     <!-- DataTables -->
     <!--<script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>-->
-	<script type="text/javascript" charset="utf8" src="{{ url_for('pipelinereport.static', filename='DataTables-1.9.4/media/js/jquery.dataTables.js')}}"></script>
-	
-	<script type="text/javascript">
+    <script type="text/javascript" charset="utf8" src="{{ url_for('pipelinereport.static', filename='DataTables-1.9.4/media/js/jquery.dataTables.js')}}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/js/ZeroClipboard.js')}}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/js/TableTools.js')}}"></script>
+
+    <style>
+	.tools {float: left;}
+    </style>
+    <script type="text/javascript">
 		WEB_SOCKET_SWF_LOCATION = "{{ url_for('pipelinereport.static', filename='WebSocketMain.swf')}}";
 		WEB_SOCKET_DEBUG = true;
 		
@@ -57,10 +63,34 @@
 		
 		$(function() {
 			
-			$(document).ready(function(){				
+		    $(document).ready(function(){				
                 var reportTable = $('#reportTable').dataTable({
+		    "sDom": '<"tools" T><"clear">lfrtip',
                     "bJQueryUI": true,
-                    "sPaginationType": "full_numbers",
+                    "aLengthMenu": [[15,25,50,100],[15,25,50,100]],
+		    "sPaginationType": "full_numbers",
+		    "iDisplayLength" : 15,
+		    "oTableTools": {
+					"sSwfPath": "{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/swf/copy_csv_xls_pdf.swf')}}",
+                                        "aButtons" : [
+						"copy",
+						{
+							"sExtends":"csv",
+                                                        "fnClick" : function(nButton,oConfig,oFlash){
+                                                                correctcolumns(oConfig);
+                                                                this.fnSetText( oFlash, this.fnGetTableData(oConfig));
+							}
+						},
+						//{
+						//	"sExtends":"pdf",
+                                                //        "fnClick" : function(nButton,oConfig,oFlash){
+                                                //                //correctcolumns(oConfig);
+                                                //                this.fnSetText( oFlash, this.fnGetTableData(oConfig));
+						//	}
+						//},
+						"print"
+					]
+		    },
                     "fnRowCallback": function(nRow, aData, index){
                         if ((aData[9] != "0" && aData[9] != "-") || (aData[2] == "0"))
                         {

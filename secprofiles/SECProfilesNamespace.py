@@ -5,17 +5,25 @@ import cPickle as pickle
 import redis
 from dat import DatFile
 import dat
-
-r= redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
-#r= redis.StrictRedis(host='localhost', port=6379, db=0)
+import urllib2
+from flask import current_app
 
 class SECProfilesNamespace(BaseNamespace):
     def __init__(self, *args, **kwargs):
         super(SECProfilesNamespace,self).__init__(*args,**kwargs)
         self.bufferrange = [-1,-1]
         self.avBufferDat = DatFile()
-        self.avSampleDat = DatFile()
+        self.avSampleDat = []
         self.activeFile = ''
+        self.saveFilename = ''
+        self.epn = ''
+        self.exp = ''
+        #self.pipeurl = 'https://aswebsaxs.synchrotron.org.au/runpipeline'
+        self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
+        
+        redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
+        redisdb = int(redisdb)
+        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
     
     def sendSAXSProfile(self, name, data):
         filename = basename(data['filename'])
@@ -112,52 +120,77 @@ class SECProfilesNamespace(BaseNamespace):
         self.updateAverageBuffer(data['buffer'])
 
         filename = splitext(self.activeFile)[0]
+        averageDats =[]
         sampleDats = []       
-        sampleNames = ['{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(data['sample'][0],data['sample'][1])]
         
-        count = 0
-        for name in sampleNames:
-            count = count + 1
-            try:
-                sampleDats.append(DatFile(name))
-            except Exception:
-                self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}.".format(name)})
-            
-            if count%10 == 0 or count == len(sampleNames):
-                self.emit('Sample_Load', round(100*count/len(sampleNames),2))
-            
-        sampleDat = dat.average(dat.rejection(sampleDats))
-
-        sampleSubDat = dat.subtract(sampleDat, self.avBufferDat)
-        self.avSampleDat = sampleSubDat
-        
-        profile = zip(sampleSubDat.q, sampleSubDat.intensities, sampleSubDat.errors)
-        self.sendSAXSProfile('Profile',{'filename': filename, 'profile': profile})
+        for sliceNum in range(data['slices']):
+            deltaName = (1+data['sample'][1]-data['sample'][0])/float(data['slices'])
+            sampleNames = ['{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(data['sample'][0]+int(deltaName*sliceNum),data['sample'][0]+int(deltaName*(sliceNum+1))-1)]
+            count = 0
+            for name in sampleNames:
+                count = count + 1
+                try:
+                    sampleDats.append(DatFile(name))
+                except Exception:
+                    self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}.".format(name)})
+                
+                if count%10 == 0 or count == len(sampleNames):
+                    self.emit('Sample_Load', round(100*count/len(sampleNames),2))
+                
+            sampleDat = dat.average(dat.rejection(sampleDats))
     
-    def on_SaveAverage(self, filename):
+            sampleSubDat = dat.subtract(sampleDat, self.avBufferDat)
+            averageDats.append(sampleSubDat)
+            
+            profile = zip(sampleSubDat.q, sampleSubDat.intensities, sampleSubDat.errors)
+            self.sendSAXSProfile('Profile',{'filename': filename, 'profile': profile})
+            
+        self.avSampleDat = averageDats
+        
+    
+    def on_SaveAverage(self, filename, indexrange):
         print 'save'
+        print filename
+        self.saveFilename = filename
         rawfilename = splitext(self.activeFile)[0]
-        self.avSampleDat.save('{0}/analysis/{1}.dat'.format(dirname(dirname(rawfilename)),filename))
+        if len(self.avSampleDat) == 1:
+            self.avSampleDat[0].save('{0}/manual/{1}'.format(dirname(dirname(rawfilename)),filename))
+        else:
+            basename = '_'.join(filename.split('.')[0].split('_')[0:-2])
+            rangedelta = (1+indexrange[1]-indexrange[0])/float(len(self.avSampleDat))
+            slicemin = indexrange[0]
+            for num,saveDat in enumerate(self.avSampleDat):
+                saveDat.save('{0}/manual/{1}_{2}_{3}.dat'.format(dirname(dirname(rawfilename)),basename,indexrange[0]+int(rangedelta*num),indexrange[0]+int(rangedelta*(num+1))-1))
+    
+    def on_SendPipeline(self):
+        print 'SendPipeline'
+        rawfilename = splitext(self.activeFile)[0]
+        if len(self.avSampleDat) == 1:
+            urllib2.urlopen('{0}/{1}/{2}/manual/{3}.dat'.format(self.pipeurl,self.epn,self.exp,self.saveFilename))
+        else:
+            for num,saveDat in enumerate(self.avSampleDat):
+                urllib2.urlopen('{0}/{1}/{2}/manual/{3}-{4}.dat'.format(self.pipeurl,self.epn,self.exp,self.saveFilename,num))
+    
     
     def sendProfile(self, name, filter_on_quality = 0):
         try:
-            data = pickle.loads(r.get('pipeline:sec:{0}:Rg'.format(self.activeFile)))
+            data = pickle.loads(self.redis.get('pipeline:sec:{0}:Rg'.format(self.activeFile)))
         except TypeError:
             self.emit('ErrorMessage',{'title': "Error", 'message': "No data in database."})
             return
         
         namedict = {'Rg_Array': 1, 'I0_Array' : 2, 'Quality' : 3, 'HighQ_Array' : 4}
         
-        exp = basename(dirname(dirname(self.activeFile)))
-        epn = basename(dirname(dirname(dirname(self.activeFile))))
+        self.exp = basename(dirname(dirname(self.activeFile)))
+        self.epn = basename(dirname(dirname(dirname(self.activeFile))))
 
         for n in name:
             array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0]
-            self.emit(n, {'filename': self.activeFile, 'epn': epn, 'exp':exp, 'profile':array})
+            self.emit(n, {'filename': self.activeFile, 'epn': self.epn, 'exp':self.exp, 'profile':array})
 
     def checkForNewRedisRgProfile(self):
         
-        self.sub = r.pubsub()
+        self.sub = self.redis.pubsub()
         self.sub.subscribe('pipeline:sec:pub:Filename')
         print 'listening'
         lastTimeSent = time()
@@ -169,7 +202,7 @@ class SECProfilesNamespace(BaseNamespace):
             try:
                 if time()-lastTimeSent < 0.5:
                     continue
-                if not r.sismember("pipeline:sec:filenames", message['data']):
+                if not self.redis.sismember("pipeline:sec:filenames", message['data']):
                     self.updateFileList()
                 if message['data'] == self.activeFile:
                     self.sendProfile(['Rg_Array','I0_Array'])
@@ -180,14 +213,14 @@ class SECProfilesNamespace(BaseNamespace):
     def on_LoadFile(self, filename):
         self.bufferrange = [-1,-1]
         self.avBufferDat = DatFile()
-        self.avSampleDat = DatFile()
+        self.avSampleDat = []
         
         self.activeFile = filename
         self.sendProfile(['Rg_Array','I0_Array','HighQ_Array'])
     
     def updateFileList(self, ):
         print 'update'
-        self.emit('File_List',list(r.smembers("pipeline:sec:filenames")))
+        self.emit('File_List',list(self.redis.smembers("pipeline:sec:filenames")))
     
     def recv_connect(self):
         print 'connect Rg'

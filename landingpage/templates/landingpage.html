@@ -5,6 +5,7 @@
 	<title>SAXS Web Services</title>
         <style>
             h1 {color: rgb(128,128,128)}
+	    .linkimage {border: solid 2pt; border-color: black;box-shadow: 10px 10px 5px #888888;}
         </style>
 </head>
 <body>
@@ -14,11 +15,11 @@
     
     <p>The services currently available are:</p>
     
-    <a href=./logviewer>Log Viewer</a><br>
-    <a href=./genericscan>Generic Scan</a><br>
-    <a href=./wellplates>96-Well Plate Scan</a><br>
-    <a href=./saxsprofiles>SAXS Profiles</a><br>
-    <a href=./pipelinereport>Autoprocessing Pipeline Report</a><br>
-    <a href=./secprofiles>Size Exclusion Chromatography Analysis</a>
+    <a href=/logviewer><img src="{{ url_for('landingpage.static', filename='Log_Viewer_Small.png')}}" alt="Log Viewer" class="linkimage"></a>
+    <a href=/genericscan><img src="{{ url_for('landingpage.static', filename='Generic_Scanner_Small.png')}}" alt="Generic Scanner" class="linkimage"></a>
+    <a href=/wellplates><img src="{{ url_for('landingpage.static', filename='Wellplate_Scanner_Small.png')}}" alt="96 Wellplate Scanner" class="linkimage"></a><br>
+    <a href=/saxsprofiles>SAXS Profiles</a><br>
+    <a href=/pipelinereport>Autoprocessing Pipeline Report</a><br>
+    <a href=/secprofiles>Size Exclusion Chromatography Analysis</a>
        
 </body>

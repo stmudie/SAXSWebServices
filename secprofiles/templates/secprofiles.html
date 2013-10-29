@@ -58,6 +58,56 @@
 		color: white;
 		background:-webkit-linear-gradient(top, #30F41A, #33AA2A 5%, #277519, #39E81E 95%, #30F41A);
 	}
+	.myLeftButton {
+		margin: 5px;
+		height: 35px;
+		width:35px;
+		border: none;
+		background: transparent;
+		background-image: url({{ url_for('secprofiles.static', filename='arrow-blue-left.png')}});
+	}
+	.myLeftButton:active {
+		margin: 5px;
+		margin-left: 4px;
+		margin-right: 6px;
+		height: 35px;
+		width:35px;
+		border: none;
+		background: transparent;
+		background-image: url({{ url_for('secprofiles.static', filename='arrow-grey-left.png')}});
+	}
+	.myRightButton {
+		margin: 5px;
+		height: 35px;
+		width:35px;
+		border: none;
+		background: transparent;
+		background-image: url({{ url_for('secprofiles.static', filename='arrow-blue-right.png')}});
+	}
+	.myRightButton:active {
+		margin: 5px;
+		height: 35px;
+		width:35px;
+		border: none;
+		background: transparent;
+		background-image: url({{ url_for('secprofiles.static', filename='arrow-grey-right.png')}});
+	}
+	.myBlueButton {
+		padding: 0;
+		height: 30px;
+		width: 60px;
+		font-size: small;
+		color: black;
+		font-weight: normal;
+		background:-webkit-linear-gradient(top, #287AA3, #1AA6ED 5%, #1D9FE0, #287AA3 95%, #287AA3);
+	}
+	.myBlueButton:hover {
+		color: white;
+	}
+	.myBlueButton:active {
+		color: white;
+		background:-webkit-linear-gradient(top, #1AA6ED, #287AA3 5%, #18516D, #1D9FE0 95%, #1AA6ED);
+	}
 	.myPurpleButton {
 		height: 30px;
 		width: 90px;
@@ -154,6 +204,18 @@ function updateRectangle(rectangle, rectangleLabel, low, high) {
 	});
 }
 
+function updateSlices() {
+	deltax = (HighSelect - LowSelect)/$('#Slices').val()
+	for (i=0;i<10;i++) {
+		if ($('#Slices').val() > i+1 ) {
+			slices[i].attr({visibility:'visible',
+	 							    d :['M ' + raw_dat_chart.xAxis[0].toPixels(LowSelect+deltax*(i+1)) + ' ' + highlightRec.y + ' v ' + highlightRec.height]
+			})
+		} else {
+			slices[i].attr({visibility:'hidden'});
+		}
+	};
+}
 
 var Rg_Data;
 var I0_Data;
@@ -167,6 +229,9 @@ var progressText='';
 var savefilename;
 var globalepn;
 var globalexp;
+var stepSize = 1;
+var lastaverage;
+var lastselectedsample ='';
 
 var saxsProfileSettings = {
 	chart: {
@@ -218,6 +283,7 @@ var rawDatSettings = {
 				if (zoomChange == 1) {
 					updateRectangle(highlightRec,highlightRecLabel,LowSelect,HighSelect);
 					updateRectangle(highlightBufRec,highlightBufRecLabel,LowBufSelect,HighBufSelect);
+					updateSlices();
 					zoomChange = 0;
 				}
 			}
@@ -290,7 +356,7 @@ var rawDatSettings = {
 				tip = tip + 'Alt-Click to Adjust Buffer Low Limit <br/> Alt-Shift-Click to Adjust Buffer High Limit <br/> Ctrl-Click to Plot'
 			}
 			if (tip == ''){
-				tip = 'Click to Adjust Sample Limits <br/> Alt-Click to Adjust Buffer Limits <br/> Ctrl-Click to Plofe'
+				tip = 'Click to Adjust Sample Limits <br/> Alt-Click to Adjust Buffer Limits <br/> Ctrl-Click to Plot'
 			} 
 			return tip;
 		}
@@ -317,6 +383,7 @@ var rawDatSettings = {
 							}
 						}
 						updateRectangle(highlightBufRec,highlightBufRecLabel,LowBufSelect,HighBufSelect);
+						updateSlices();
 					} else if (event.ctrlKey) {
 						socket.emit('Load_Profile',{'position': position, 'subtract': $('#subtract').is(':checked'), 'bufferrange':[LowBufSelect,HighBufSelect]});
 					} else {
@@ -335,6 +402,7 @@ var rawDatSettings = {
 							}
 						}
 						updateRectangle(highlightRec,highlightRecLabel,LowSelect,HighSelect);
+						updateSlices();
 					}
 					$('#LowBufSpin').spinner("value",LowBufSelect);
 					$('#HighBufSpin').spinner("value",HighBufSelect);
@@ -541,6 +609,14 @@ $(function () {
 	
 	$(document).ready(function() {
 
+		$(window).resize(function() {
+			width = Math.min($(window).width()-300,1200)
+			$("#raw_dat_div").width(width);
+			$("#saxsprofile_div").width(width);
+		});
+		
+		$(window).resize();	
+
 		rawDatSettings.chart.renderTo = 'raw_dat_div';
 		raw_dat_chart = new Highcharts.Chart(rawDatSettings);
 		
@@ -575,30 +651,71 @@ $(function () {
 		.attr({visibility: 'hidden'})
 		.add();
 
+		slices = [];
+		
+		for (i=0;i<10;i++) {
+			slices.push(raw_dat_chart.renderer.path(['M',100,raw_dat_chart.plotTop,100,raw_dat_chart.plotHeight])
+			.attr({
+				visibility : 'hidden',
+				'stroke-width': 2,
+				stroke: 'green',
+				zIndex:0,
+				opacity: 0.2
+			})
+			.add());
+		}
+		
 		$( '#ClearBuffer').button()
 			.click(function(){
 				clearBuffer()
 			});
-		
+		$( ".sampleShift").button()
+			.click(function(event){
+				if (event.currentTarget.id == 'SampleShiftHigh'){
+					step = stepSize;
+				} else {
+					step = -stepSize;
+				}
+				$('#LowSpin').spinner("value",parseInt(LowSelect)+step);
+				$('#HighSpin').spinner("value",parseInt(HighSelect)+step);
+				LowSelect = parseInt($('#LowSpin').val());
+				HighSelect = parseInt($('#HighSpin').val());
+				updateRectangle(highlightRec,highlightRecLabel,$('#LowSpin').val(),$('#HighSpin').val());
+				updateSlices();
+			});
 		$( "#Average" ).button({disabled : false})
 			.click(function(){
-				socket.emit('Average',{buffer:[LowBufSelect,HighBufSelect], sample: [LowSelect,HighSelect]})
+				if ($('#Slices').val() > 1) {
+					$("#overplot").prop('checked', true);
+				}
+				socket.emit('Average',{buffer:[parseInt(LowBufSelect),parseInt(HighBufSelect)], sample: [parseInt(LowSelect),parseInt(HighSelect)], slices: parseInt($('#Slices').val())})
+				samplename = lastselectedsample.split('/').slice(-1)[0].split('.')[0]
+				lastaverage = {name: samplename, low: LowSelect, high:  HighSelect, slices: parseInt($('#Slices').val())}
 			});
 		$( "#Save" ).button({disabled : false})
 			.click(function(){
+				if (lastaverage.slices==1){
+					$("#savesub").html(".dat");
+					$("#Name").val(lastaverage.name+"_"+lastaverage.low+"_"+lastaverage.high);
+				} else {
+					$("#savesub").html("_###_###.dat");
+					$("#Name").val(lastaverage.name);
+				}
 				$("#SaveDialog").dialog("open");
 			});
 		$( "#SaveToo" ).button({disabled : false})
 			.click(function(){
-			    savefilename = $("#Name").val()
-				socket.emit('SaveAverage',savefilename)
+			    savefilename = $("#Name").val()+$("#savesub").html();
+				range = [LowSelect,HighSelect];
+				socket.emit('SaveAverage',savefilename, range);
 				$("#SaveDialog").dialog("close");
 			});
 		$( "#Analyse" ).button({disabled : false})
 			.click(function(){
-				$.get('https://aswebsaxs.synchrotron.org.au/runpipeline/'+globalepn+'/'+globalexp+'/analysis/'+savefilename+'.dat', function(){
-					alert("File " + savefilename + ".dat sent to pipeline.");
-				})
+				socket.emit('SendPipeline')
+				//$.get('https://aswebsaxs.synchrotron.org.au/runpipeline/'+globalepn+'/'+globalexp+'/analysis/'+savefilename+'.dat', function(){
+				//	alert("File " + savefilename + ".dat sent to pipeline.");
+				//})
 			});
 		$( "#plotallsample" ).button({disabled : false})
 			.click(function(){
@@ -628,7 +745,13 @@ $(function () {
 			autoOpen: false,
 			modal: true,
 			height: 100,
-			width: 500
+			width: 700
+		});
+		
+		$("#Name").keyup(function(event) {
+			if (event.keyCode == 13) {
+				$("#SaveToo").click();
+			}
 		});
 		
 		$("#filelistmenu").menu({
@@ -636,7 +759,28 @@ $(function () {
 				clearBuffer();
 				clearSample();
 				socket.emit('LoadFile',event.currentTarget.id);
+				lastselectedsample = event.currentTarget.id;
 			}
+		});
+		
+		$("#StepSize").spinner({
+			max: 20,
+			min: 1,
+			stop: function( event, ui) {
+				$(this).trigger('allchanges');
+			}
+		}).on('allchanges', function(event){
+			stepSize=parseInt($(this).val());
+		});
+		
+		$("#Slices").spinner({
+			max: 10,
+			min: 1,
+			stop: function( event, ui) {
+				$(this).trigger('allchanges');
+			}
+		}).on('allchanges', function(event){
+			updateSlices();
 		});
 		
 		$(".spinner").spinner({
@@ -649,19 +793,19 @@ $(function () {
 			}
 		}).on('allchanges', function(event){
 			if (this.className.indexOf('buffer') >=0) {
-				LowBufSelect = $('#LowBufSpin').val();
-				HighBufSelect = $('#HighBufSpin').val();
+				LowBufSelect = parseInt($('#LowBufSpin').val());
+				HighBufSelect = parseInt($('#HighBufSpin').val());
 				updateRectangle(highlightBufRec,highlightBufRecLabel,$('#LowBufSpin').val(),$('#HighBufSpin').val());
+				updateSlices();
 			}
 			if (this.className.indexOf('sample') >=0) {
-				LowSelect = $('#LowSpin').val();
-				HighSelect = $('#HighSpin').val();
-				console.log($('#LowSpin').val(), $('#HighSpin').val());
+				LowSelect = parseInt($('#LowSpin').val());
+				HighSelect = parseInt($('#HighSpin').val());
 				updateRectangle(highlightRec,highlightRecLabel,$('#LowSpin').val(),$('#HighSpin').val());
+				updateSlices();
 			}
 		});
 	});
-    
 });
 </script>
 </head>
@@ -674,7 +818,7 @@ $(function () {
 </div>
 <div id="SaveDialog" title="Save Average">
 	<label for="Name">File Name:</label>
-	<input id="Name"/>.dat
+	<input id="Name"/><span id="savesub"></span>
 	<button id="SaveToo" class="myOrangeButton">Save</button>
 </div>
 
@@ -692,12 +836,20 @@ $(function () {
 	<input id="LowSpin" class="spinner sample" name="LowSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
 	<label for="HighSpin">High Sample:</label>
 	<input id="HighSpin" class="spinner sample" name="HighSpin" value ="-1" onkeypress="return isNumberKey(event,'LowBufSpin')" /></br>
+	<div style="border: solid 1px; border-color: #C4C4C4; background: #C2C6ED; padding:3px; padding-top:0px; margin-top: 3px; margin-bottom: 5px;">
+		<button id="SampleShiftLow" class="sampleShift myLeftButton"></button> Sample Shift <button id="SampleShiftHigh" class="sampleShift myRightButton"></button></br>
+		<label for="StepSize" style="width:116px;">Step Size:</label>
+		<input id="StepSize" style="width: 50px;" name="StepSize" value ="1" onkeypress="return isNumberKey(event,'StepSize')" /></br>
+	</div>
+	<label for="Slices">Peak Slices:</label>
+	<input id="Slices" style="width: 50px;" name="Slices" value ="1" onkeypress="return isNumberKey(event,'SlicesSpin')" /></br>
+	<div style="font-size: x-small; margin-bottom: 1em;">Slices not guaranteed to be the same size</div>
 	<button id="Average" class="myGreenButton">Average</button></br>
 	<button id="Save" class="myOrangeButton">Save</button></br>
 	<button id="Analyse" class="myPurpleButton">Analyse</button></br>
 
 	<h3> Individual Plotting </h3>
-	<input type="checkbox" id="subtract" /><label for="subtract">Subtract Buffer</label><br>
+	<input type="checkbox" id="subtract" checked/><label for="subtract">Subtract Buffer</label><br>
 	<div style="font-size: x-small">Uses selected buffer region if available </br> otherwise first 20 shots.</div></br>
 	<input type="checkbox" id="overplot" /><label for="overlot">Overplot</label></br>
 	<h6 style="-webkit-margin-after: 0.5em">Plot All Selected:</h6>

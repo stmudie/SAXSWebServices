@@ -15,7 +15,14 @@
 	<script src="{{ url_for('wellPlate.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
 	<script src="{{ url_for('wellPlate.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
 	<link rel="stylesheet" href="{{ url_for('wellPlate.static', filename='demos.css')}}">
+	
+	<link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
+		
 	<style>
+	
+	H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;}
+	H8 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 16pt;}
+	body {background: #F9F9F9;}
 	
 	/*styles for the Run Order Tab*/
 	.sortableRowNamesOrder {list-style-type: none; float: left; margin: 0; margin-top: 10px; margin-right: 5px; padding: 0; width: 25px;}
@@ -660,8 +667,10 @@
 </head>
 <body>
 
-<H1 id="epnTitle"></H1>
-<span id="topbar" class="ui-widget-header ui-corner-all">
+<H7>Well Plate Scan</H7>
+<H8 id="epnTitle" style="margin-left: 20px;"></H8><br>
+<div style="margin: 10px 0px;">
+<span id="topbar" class="ui-widget-header ui-corner-all" style="padding: 22px 10px;">
 	<!--<label for="userepn">Username_EPN</label>
 	<input id="userepn"></input>	-->
 	<label for="platename">Plate Name</label>
@@ -669,9 +678,9 @@
 	<button id="save">Save</button>
 	<button id="load">Load</button>
 	<button id="StopTop">Stop</button>
-</span>	
-
-<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
+	<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
+</span>
+</div>
 
 <div class="wellPlates" style="width:1500px">
 

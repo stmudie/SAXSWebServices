@@ -4,42 +4,47 @@ import cPickle as pickle
 import redis
 import time
 
-r = redis.StrictRedis(host='localhost', port=6379, db=0)
-
 class WellPlateNamespace(BaseNamespace):
+    def __init__(self, *args, **kwargs):
+        super(WellPlateNamespace,self).__init__(*args,**kwargs)
+        
+        redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
+        redisdb = int(redisdb)
+        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        
     def on_connect(self):
         print 'connect'
         self.emit('epn', self.request['epn'][0])
-        plates = list(r.smembers('well:' + self.request['epn'][0] + ':plates'))
+        plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
         self.emit('loadlist',plates)
 
     def on_changeepn(self, user_epn):
         print 'changeepn'
         self.request['epn'][0]=user_epn
         self.emit('epn', self.request['epn'][0])
-        plates = list(r.smembers('well:' + self.request['epn'][0] + ':plates'))
+        plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
         self.emit('loadlist',plates)
 
     def on_save(self, data):
         epn = self.request['epn'][0]
-        r.sadd('well:epn', epn)
-        r.sadd('well:' + epn + ':plates', data['platename'])
-        r.set('well:' + epn + ':plate:' + data['platename'], pickle.dumps(data))
-        plates = list(r.smembers('well:' + self.request['epn'][0] + ':plates'))
+        self.redis.sadd('well:epn', epn)
+        self.redis.sadd('well:' + epn + ':plates', data['platename'])
+        self.redis.set('well:' + epn + ':plate:' + data['platename'], pickle.dumps(data))
+        plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
         self.emit('loadlist',plates)
  
     def on_load(self, epn, plate):
         print 'on load'
-        redisData = r.get('well:' + epn + ':plate:' + plate)
+        redisData = self.redis.get('well:' + epn + ':plate:' + plate)
         if redisData != None:
-            data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
+            data = pickle.loads(self.redis.get('well:' + epn + ':plate:' + plate))
         else :
             data = ''
         
         self.emit('platedata', epn, plate, data)
 
     def on_initialise(self,epn,plate,type='all'):
-        data = pickle.loads(r.get('well:' + epn + ':plate:' + plate))
+        data = pickle.loads(self.redis.get('well:' + epn + ':plate:' + plate))
         if type == 'all':
             sampleNames = [data['sampleNames'][int(order)] for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]
             positions = [1+int(order) for order in data['sampleOrder'] if data['sampleNames'][int(order)] != ""]

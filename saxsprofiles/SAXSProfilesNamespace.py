@@ -4,20 +4,25 @@ from os.path import basename
 import cPickle as pickle
 import redis
 
-r= redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
-
 class SAXSProfilesNamespace(BaseNamespace):
+    def __init__(self, *args, **kwargs):
+        super(SAXSProfilesNamespace,self).__init__(*args,**kwargs)
+        
+        redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
+        redisdb = int(redisdb)
+        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+    
     def sendProfile(self, name, data):
         filename = basename(data['filename'])
         fullProfile =[element for element in data['profile'] if element[1]>0]
         self.emit(name, {'filename':filename,'profile':fullProfile})
 
     def checkForNewRedisProfile(self):
-        self.sub = r.pubsub()
-        subChannels = r.smembers('logline:channels')
+        self.sub = self.redis.pubsub()
+        subChannels = self.redis.smembers('logline:channels')
         
         profileNames = [channel.split(':')[-1] for channel in subChannels]
-        profiles = r.mget(["logline:%s" % profile for profile in profileNames])
+        profiles = self.redis.mget(["logline:%s" % profile for profile in profileNames])
         for profileIndex, profileName in enumerate(profileNames):
             profile = profiles[profileIndex]
             if profile != None :

@@ -167,7 +167,7 @@
 				"sDom": 'R<"clear"><"tools"CfT><"clear">lrtip',
 				"iDisplayLength" : 25,
 				"sPaginationType": "full_numbers",
-                                "oTableTools": {
+                "oTableTools": {
 					"sSwfPath": "{{ url_for('logviewer.static', filename='DataTables-1.9.4/extras/TableTools/media/swf/copy_csv_xls_pdf.swf')}}",
                                         "aButtons" : [
 						"copy",
@@ -213,12 +213,11 @@
 		});
 		socket.on('logfiles', function(logfiles){
 
-                globallogfiles = logfiles;
+            globallogfiles = logfiles;
 			logfilelist = [];
 			for (i=0;i<logfiles.length;i++) {
 				reducedname = logfiles[i].split("/").slice(-4,-2)
 				reducedname.push(logfiles[i].split("/").slice(-1))
-				
 				logfilelist.push({label: logfiles[i], value : reducedname.join(':')});
 			}
 			$( "#logname" ).autocomplete( "option", "source", logfilelist);
@@ -228,23 +227,9 @@
 		
 		socket.on('loglines', function(data){
 			if ($('#logfiletable').hasClass('dataTable')){
-                                reorderedData = [];
-			        aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
-                    
-                                order = [];
-                                /*for (i=0;i<aoColumns.length;i++){
-                                       order.push(aoColumns[i]._ColReorder_iOrigCol);
-                                }
-                                for (i=0;i<data.data.length;i++){
-                                        record = [];
-				        for (j=0;j<data.data[i].length;j++){
-	 				        record.push(data.data[i][order[j]]);
-					}
-                                        reorderedData.push(record);
-                                }				
-
-                                $('#logfiletable').dataTable().fnAddData(reorderedData);*/
-                                for (i=0;i<data.data.length;i++){
+                reorderedData = [];
+		        aoColumns = $('#logfiletable').dataTable().fnSettings().aoColumns;
+                for (i=0;i<data.data.length;i++){
 					record = [data.data[i][0],data.data[i][1]];
 					for (j=2;j<aoColumns.length;j++){
 						record.push(data.data[i][2+data.keys.indexOf(aoColumns[j].sTitle)]);
@@ -252,11 +237,9 @@
 					reorderedData.push(record);
 				}
 				$('#logfiletable').dataTable().fnAddData(reorderedData);
-
 			} else {
 				loadlog(data);
 			}
-			
 		});
 		
 		socket.on('loadlog', function(data){

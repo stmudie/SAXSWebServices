@@ -19,7 +19,10 @@ from logviewer import LogViewerNamespace
 from landingpage import landingpage_app
 from reverse import ReverseProxied
 from plugins import vbl, beamline
-import config
+try:
+    import localconfig as config
+except Exception:
+    import config
 from RedisSession import RedisSessionInterface
 
 app = Flask(__name__)
@@ -38,7 +41,7 @@ app.register_blueprint(genericscan_app, url_prefix='/genericscan')
 app.register_blueprint(logviewer_app, url_prefix='/logviewer')
 #app.register_blueprint(mdaplotter_app, url_prefix='/mdaplotter')
 app.register_blueprint(landingpage_app, url_prefix='/')
-
+app.register_blueprint(landingpage_app, url_prefix='/static')
 #attributes = { 'epn': ['default_0001'], 'nicknames': [] }
 
 @app.route("/socket.io/<path:path>")
@@ -48,7 +51,7 @@ def run_socketio(path):
     else :
         user = 'Default_123'
     
-    attributes = { 'epn' : [user]}
+    attributes = { 'epn' : [user], 'REDIS' : app.config['REDIS']}
     print path
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/mdaplotter':MDAPlotterNamespace}, attributes)
     socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace}, attributes)

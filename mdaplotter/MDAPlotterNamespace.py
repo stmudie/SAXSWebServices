@@ -7,9 +7,14 @@ import redis
 import struct
 import reflectutils as ref
 
-r= redis.StrictRedis(host='localhost', port=6379, db=0)
-
 class MDAPlotterNamespace(BaseNamespace):
+    def __init__(self, *args, **kwargs):
+        super(MDAPlotterNamespace,self).__init__(*args,**kwargs)
+        
+        redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
+        redisdb = int(redisdb)
+        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        
     def on_filename(self, filename):
         try:
             if isfile(filename) != True:
@@ -36,13 +41,13 @@ class MDAPlotterNamespace(BaseNamespace):
         self.emit(name, {'filename':filename,'profile':data})
 
     def checkForNewRedisProfile(self):
-        self.sub = r.pubsub()
+        self.sub = self.redis.pubsub()
         print 'here'
         self.sub.subscribe('MDA:NewFile')
         print 'listening'
         for message in self.sub.listen():
             print 'New File: %s' %(message,)
-            filelist = r.lrange('MDA:reflectivity',0,r.llen('MDA:reflectivity')-1)
+            filelist = self.redis.lrange('MDA:reflectivity',0,self.redis.llen('MDA:reflectivity')-1)
             self.emit('file_list',filelist)   #[basename(filename) for filename in filelist])
             if type(message['data']) != str:
                 continue
@@ -73,7 +78,7 @@ class MDAPlotterNamespace(BaseNamespace):
             
     def recv_connect(self):
         print 'connected here'
-        filelist = r.lrange('MDA:reflectivity',0,r.llen('MDA:reflectivity')-1)
+        filelist = self.redis.lrange('MDA:reflectivity',0,self.redis.llen('MDA:reflectivity')-1)
         self.emit('file_list',filelist)   #[basename(filename) for filename in filelist])
         g = self.spawn(self.checkForNewRedisProfile)
         

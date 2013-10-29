@@ -4,8 +4,6 @@ import cPickle as pickle
 import redis
 import time
 
-r = redis.StrictRedis(host='localhost', port=6379, db=0)
-
 # Base PVS
 indexPV = "13INDEXARRAY:array"
 IOCPV = 'SR13ID01HU02IOC02:'
@@ -24,32 +22,40 @@ def running_sum(a):
         yield tot
 
 class GenericScanNamespace(BaseNamespace):
+    def __init__(self, *args, **kwargs):
+        super(GenericScanNamespace,self).__init__(*args,**kwargs)
+
+        redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
+        redisdb = int(redisdb)
+        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+    
+    
     def on_connect(self):
         print 'connect'
         self.emit('epn', self.request['epn'][0])
-        scans = list(r.smembers('generic:' + self.request['epn'][0] + ':scans'))
+        scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
         self.emit('loadlist',scans)
 
     def on_changeepn(self, user_epn):
         print 'changeepn'
         self.request['epn'][0]=user_epn
         self.emit('epn', self.request['epn'][0])
-        scans = list(r.smembers('generic:' + self.request['epn'][0] + ':scans'))
+        scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
         self.emit('loadlist',scans)
 
     def on_save(self, data):
         epn = self.request['epn'][0]
-        r.sadd('generic:epn', epn)
-        r.sadd('generic:' + epn + ':scans', data['scanname'])
-        r.set('generic:' + epn + ':scan:' + data['scanname'], pickle.dumps(data))
-        scans = list(r.smembers('generic:' + self.request['epn'][0] + ':scans'))
+        self.redis.sadd('generic:epn', epn)
+        self.redis.sadd('generic:' + epn + ':scans', data['scanname'])
+        self.redis.set('generic:' + epn + ':scan:' + data['scanname'], pickle.dumps(data))
+        scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
         self.emit('loadlist',scans)
  
     def on_load(self, epn, scan):
         print 'on load'
-        redisData = r.get('generic:' + epn + ':scan:' + scan)
+        redisData = self.redis.get('generic:' + epn + ':scan:' + scan)
         if redisData != None:
-            data = pickle.loads(r.get('generic:' + epn + ':scan:' + scan))
+            data = pickle.loads(self.redis.get('generic:' + epn + ':scan:' + scan))
         else :
             data = ''
         
@@ -58,7 +64,7 @@ class GenericScanNamespace(BaseNamespace):
     def initialise(self,epn,scan,type='all'):
         
         #Load scan data from redis
-        data = pickle.loads(r.get('generic:' + epn + ':scan:' + scan))
+        data = pickle.loads(self.redis.get('generic:' + epn + ':scan:' + scan))
                 
         #Setup filenames
         filenames = []

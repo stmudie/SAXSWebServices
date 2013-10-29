@@ -6,14 +6,21 @@ import os
 #import xml.etree.ElementTree as ET
 import xml.etree.cElementTree as ET
 
-rl = redis.StrictRedis(host='10.138.11.70', port=6379, db=0)
-rw = redis.StrictRedis(host='10.138.11.67', port=6379, db=0)
-
 class LogViewerNamespace(BaseNamespace, BroadcastMixin):
-    
+    def __init__(self, *args, **kwargs):
+        super(LogViewerNamespace,self).__init__(*args,**kwargs)
+        
+        redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
+        redisdb = int(redisdb)
+        self.redislog = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        
+        redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
+        redisdb = int(redisdb)
+        self.redisweb = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        
     def initialize(self):
         self.loglength = 0
-        state = rw.get('logviewer:%s:state' % (self.request['epn'][0]))
+        state = self.redisweb.get('logviewer:%s:state' % (self.request['epn'][0]))
         if state != None:
             self.state = pickle.loads(state)
         else:
@@ -34,7 +41,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
     
     def on_state(self, state):
         self.state = state
-        rw.set('logviewer:%s:state' % (self.request['epn'][0],), pickle.dumps(state));
+        self.redisweb.set('logviewer:%s:state' % (self.request['epn'][0],), pickle.dumps(state));
     
     def load(self, logfile):
         with open(logfile, 'r') as f:
@@ -68,7 +75,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         self.kill_local_jobs()
         self.loglength = 0
         if logfile == 'Current':
-            g_loadloglines = self.spawn(self.loadloglines,-1))
+            g_loadloglines = self.spawn(self.loadloglines,-1)
             g_rediswatch = self.spawn(self.rediswatch)
         else :
             g_load = self.spawn(self.load,logfile)
@@ -76,7 +83,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
 
     def sendloglist(self):
 #        logfiles = [log for log in self.find_logfiles() if (log.find('livelog') >= 0 and log.find('comments') == -1)]
-        logfiles = rw.get('logviewer:logfiles')
+        logfiles = self.redisweb.get('logviewer:logfiles')
         if logfiles != None:
             logfiles = pickle.loads(logfiles)
         else :
@@ -85,14 +92,14 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
     
     def loadloglines(self, num=-1):
         if num==-1:
-            num = int(rl.get('logline:num'))
+            num = int(self.redislog.get('logline:num'))
         
         if num <= 0:
             return
         
         rawloglines = []
         for row in range(self.loglength+1,num+1):
-            rawloglines.append(rl.hgetall('logline:%d' % (row,)))
+            rawloglines.append(self.redislog.hgetall('logline:%d' % (row,)))
             
         keys = list(set([x for keys in rawloglines for x in keys]))
 
@@ -106,7 +113,7 @@ class LogViewerNamespace(BaseNamespace, BroadcastMixin):
         self.loglength = num
     
     def rediswatch(self):
-        self.sub = rl.pubsub()
+        self.sub = self.redislog.pubsub()
         
         self.sub.subscribe('logline:pub:logfileupdate')
         print 'listening'
