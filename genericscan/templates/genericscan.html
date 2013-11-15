@@ -102,11 +102,20 @@
 		var globalepn;
 		var globalscan;
 		var globalscanlist;
-				
+		var globalbeamline = 'None';
+		
 		socket.on('connect', function(){
 			socket.emit('connect')
 		});
-		
+	
+                socket.on('beamline', function(beamline){
+                    if (beamline != null){
+			globalbeamline = beamline;
+		    } else {
+		        globalbeamline = 'None';
+                    }
+		});
+	
 		socket.on('epn', function(epn){
 			if ('{{epn}}' != '' && '{{epn}}' != epn) {
 				socket.emit('changeepn','{{epn}}')
@@ -618,18 +627,31 @@
 				socket.emit("load",globalepn,globalscan);
 			});
 			$("#run").button().click(function(){
-				if (saveScan() != -1) {
-					socket.emit("run",globalepn, globalscan);
+				if (globalbeamline == 'SAXS'){
+					if (saveScan() != -1) {
+						socket.emit("run",globalepn, globalscan);
+					}
+				} else {
+					alert('Not at beamline. Function disabled');
 				}
 			});
 			$("#initialise").button().click(function(){
-				if (saveScan() != -1) {
-					socket.emit("initialise",globalepn, globalscan);
+				if (globalbeamline == 'SAXS'){
+  					if (saveScan() != -1) {
+						socket.emit("initialise",globalepn, globalscan);
+					}
+				} else {
+					alert('Not at beamline. Function disabled');
 				}
 			});
 			$("#stop").button().click(function(){
-				socket.emit("stop");
+				if (globalbeamline == 'SAXS'){
+					socket.emit("stop");
+				} else {
+					alert('Not at beamline. Function disabled');
+				}
 			});
+			
 			$( "#radio" ).buttonset();
 			$( "#tab2tools").buttonset();
 			$( "#tab2btools").buttonset();

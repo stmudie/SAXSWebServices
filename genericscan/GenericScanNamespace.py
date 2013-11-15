@@ -21,6 +21,14 @@ def running_sum(a):
         tot += item
         yield tot
 
+def carefulfloat(a):
+    try:
+        val = float(a)
+    except:
+        val = 0
+
+    return val
+
 class GenericScanNamespace(BaseNamespace):
     def __init__(self, *args, **kwargs):
         super(GenericScanNamespace,self).__init__(*args,**kwargs)
@@ -32,6 +40,8 @@ class GenericScanNamespace(BaseNamespace):
     
     def on_connect(self):
         print 'connect'
+         
+        self.emit('beamline', self.request['beamline'])
         self.emit('epn', self.request['epn'][0])
         scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
         self.emit('loadlist',scans)
@@ -159,7 +169,7 @@ class GenericScanNamespace(BaseNamespace):
                 
                 elif scantype == 'Table' :
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
-                    tableData = [float(dataPoint) for dataPoint in (data['tableData'][tableCount])]
+                    tableData = [carefulfloat(dataPoint) for dataPoint in (data['tableData'][tableCount])]
                     result += caput(scanPV+'P'+str(1+posNum)+'PA', tableData)
                     tableCount = tableCount + 1
                     

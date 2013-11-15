@@ -14,6 +14,8 @@ class WellPlateNamespace(BaseNamespace):
         
     def on_connect(self):
         print 'connect'
+
+        self.emit('beamline', self.request['beamline'])
         self.emit('epn', self.request['epn'][0])
         plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
         self.emit('loadlist',plates)

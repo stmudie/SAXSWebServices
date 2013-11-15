@@ -73,11 +73,20 @@
 		var socket = io.connect('/wellplates');
 		var globalepn;
 		var globalplate;
-		//var alive = true;
+		var globalbeamline = 'None';
+                //var alive = true;
 		
 		socket.on('connect', function(){
 			socket.emit('connect')
 		});
+
+                socket.on('beamline', function(beamline){
+                    if (beamline !=null){
+                       globalbeamline = beamline;
+                    } else {
+                        globalbeamline = 'None';
+                    }
+                });
 	
                 socket.on('disconnect', function(){
 		    alert('Server has died. Refresh browser.');
@@ -424,22 +433,38 @@
 			});
 			$("#run").click(function(){console.log( '{{test}}' )});
 			$("#initialise").button().click(function(){
-				if (savePlate() == 0){
-				socket.emit("initialise",globalepn, globalplate);
-				};
+				if (globalbeamline == 'SAXS'){
+					if (savePlate() == 0){
+						socket.emit("initialise",globalepn, globalplate);
+ 					};
+				} else {
+					alert('Not at beamline. Function disabled');
+				}
 			});
 			$("#runall").button().click(function(){
-				if (savePlate() == 0){
-				socket.emit("runall",globalepn, globalplate);
-				};
+				if (globalbeamline == 'SAXS'){
+					if (savePlate() == 0){
+						socket.emit("runall",globalepn, globalplate);
+					};
+				} else {
+					alert('Not at beamline. Function disabled');
+				}
 			});
 			$("#runselected").button().click(function(){
-				if (savePlate() == 0){
-				socket.emit("runselected",globalepn, globalplate);
+				if (globalbeamline == 'SAXS'){
+					if (savePlate() == 0){
+						socket.emit("runselected",globalepn, globalplate);
+					}
+				} else {
+					alert('Not at beamline. Function disabled');
 				}
 			});
 			$("#stop").button().click(function(){
-				//socket.emit("stop");
+				if (globalbeamline == 'SAXS'){
+				    //socket.emit("stop");
+				} else {
+					alert('Not at beamline. Function disabled');
+				}
 			});
 			$( "#radio" ).buttonset();
 			$( "#tab2tools").buttonset();
