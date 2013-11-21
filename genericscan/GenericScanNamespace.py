@@ -6,6 +6,7 @@ import time
 
 # Base PVS
 indexPV = "13INDEXARRAY:array"
+#indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
 #IOCPV = 'SMTEST:'
 
@@ -78,10 +79,10 @@ class GenericScanNamespace(BaseNamespace):
                 
         #Setup filenames
         filenames = []
-        num4 = int(data['number'][3] or 1)
-        num3 = int(data['number'][2] or 1)
-        num2 = int(data['number'][1] or 1)
-        num1 = int(data['number'][0] or 1)
+        num4 = int(data['number'][(data['nameorder'][3]-1)] or 1)
+        num3 = int(data['number'][(data['nameorder'][2]-1)] or 1)
+        num2 = int(data['number'][(data['nameorder'][1]-1)] or 1)
+        num1 = int(data['number'][(data['nameorder'][0]-1)] or 1)
         
         for pos4 in range(num4):
             for pos3 in range(num3):

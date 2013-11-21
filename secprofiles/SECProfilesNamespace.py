@@ -1,6 +1,7 @@
 from socketio.namespace import BaseNamespace
 from time import sleep, time
-from os.path import basename, splitext, dirname
+from os.path import basename, splitext, dirname, join, walk
+import os
 import cPickle as pickle
 import redis
 from dat import DatFile
@@ -23,7 +24,10 @@ class SECProfilesNamespace(BaseNamespace):
         
         redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
         redisdb = int(redisdb)
-        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        if redisIP == 'No Redis':
+            self.redis = 'No Redis'
+        else :
+            self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
     
     def sendSAXSProfile(self, name, data):
         filename = basename(data['filename'])
@@ -175,6 +179,15 @@ class SECProfilesNamespace(BaseNamespace):
     def sendProfile(self, name, filter_on_quality = 0):
         try:
             data = pickle.loads(self.redis.get('pipeline:sec:{0}:Rg'.format(self.activeFile)))
+        except AttributeError:
+            profile = []
+            with open(self.activeFile, 'r') as f:
+                next(f)
+                for line in f:
+                    profile.append(tuple([float(x) for x in line.split()]))
+            
+            data = {'profiles':profile}
+                
         except TypeError:
             self.emit('ErrorMessage',{'title': "Error", 'message': "No data in database."})
             return
@@ -218,19 +231,39 @@ class SECProfilesNamespace(BaseNamespace):
         self.activeFile = filename
         self.sendProfile(['Rg_Array','I0_Array','HighQ_Array'])
     
+    def find_rg_profiles(self, ):
+        #for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/logfiletest"):
+        for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
+            if 'analysis' in dirs:
+                print 'analysis'
+                index = dirs.index('analysis')
+                del dirs[:index]
+                del dirs[1:]
+            
+            for f in files:
+                if f.split('_')[-1] == 'rgtrace.dat':
+                    yield os.path.join(root, f)
+    
+    
     def updateFileList(self, ):
-        print 'update'
-        self.emit('File_List',list(self.redis.smembers("pipeline:sec:filenames")))
+        if self.redis == 'No Redis':
+            files = [f for f in self.find_rg_profiles()]
+        else :
+            files = list(self.redis.smembers("pipeline:sec:filenames"))
+            
+        self.emit('File_List',files)
     
     def recv_connect(self):
         print 'connect Rg'
         self.updateFileList()
-        g = self.spawn(self.checkForNewRedisRgProfile)
+        if self.redis != 'No Redis':
+            g = self.spawn(self.checkForNewRedisRgProfile)
         
     
     def recv_disconnect(self):
-        self.sub.unsubscribe()
-        self.kill_local_jobs()
+        if self.redis != "No Redis":
+            self.sub.unsubscribe()
+            self.kill_local_jobs()
         print 'disconnect'
 
     def recv_message(self, message):

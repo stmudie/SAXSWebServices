@@ -63,6 +63,9 @@
 	.Expanded.odd .slick-cell{color: #3F3F3F; background: #F9F7F4;}
 	.Expanded.even .slick-cell{color: #3F3F3F; background: #EFEDEA;}
 	
+	.loop-div {float: left; padding-right:10px; padding-top:15px;}
+	.clear-button {float: right;}
+	
 	/*styles for the Start Scan Tab*/
 	.stop-button {background: rgb(200,40,40) !important;color: rgb(240,240,240) !important;}
 	.stop-button:hover {background: rgb(180,40,40) !important;color: rgb(255,255,255) !important;}
@@ -626,6 +629,17 @@
 				globalscan = $("#scanname").val();
 				socket.emit("load",globalepn,globalscan);
 			});
+			$(".clear-button").button().click(function(){
+				loopnum = this.id.slice(5,6) - 1;
+				fillData[loopnum]=([{rows:'Positioner'},{rows:'Type'},{rows:'Abs/Rel', position1:'Absolute', position2:'Absolute', position3:'Absolute'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'},{rows:'Delay (s)'}]);
+				fillGrid[loopnum].setData(fillData[loopnum]);
+				fillData[loopnum].getItemMetadata = formatColumns
+				fillGrid[loopnum].render();
+				posData[loopnum]= [{colNum:1}];
+				posGrid[loopnum].setData(posData[loopnum]);
+				posGrid[loopnum].render();
+				
+			});
 			$("#run").button().click(function(){
 				if (globalbeamline == 'SAXS'){
 					if (saveScan() != -1) {
@@ -1081,23 +1095,27 @@
 		<input type="checkbox" id="autoedit" checked/><label for="autoedit">Single Click Data Entry. Disables Copy/Paste.</label>
 		<label for="nameorder" style="padding-left: 30px; padding-right: 5px;">Name Order:</label><input id="nameorder" value="Loop1Loop2Loop3Loop4" style="width:150px"></input></br>
 		
-		<div style="float: left; padding-right:10px">
-			<h3>Loop 1</h3>		
+		<div class="loop-div">
+			<h8>Loop 1</h8>
+			<button id="clear1" class="clear-button">Clear Loop</button>
 			<div id="fillGrid1" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid1" style="width:365px;height:540px;clear:both;"></div>
 		</div>
-		<div style="float: left; padding-right:10px">
-			<h3>Loop 2</h3>		
+		<div class="loop-div">
+			<h8>Loop 2</h8>
+			<button id="clear2" class="clear-button">Clear Loop</button>
 			<div id="fillGrid2" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid2" style="width:365px;height:540px;clear:both;"></div>
 		</div>
-		<div style="float: left; padding-right:10px">
-			<h3>Loop 3</h3>		
+		<div class="loop-div">
+			<h8>Loop 3</h8>
+			<button id="clear3" class="clear-button">Clear Loop</button>
 			<div id="fillGrid3" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid3" style="width:365px;height:540px;clear:both;"></div>
 		</div>
-		<div style="float: left">
-			<h3>Loop 4</h3>		
+		<div class="loop-div" style="padding-right: 0px;">
+			<h8>Loop 4</h8>
+			<button id="clear4" class="clear-button">Clear Loop</button>
 			<div id="fillGrid4" style="width:365px;height:240px;clear:both;"></div>
 			<div id="positionGrid4" style="width:365px;height:540px;clear:both;"></div>
 		</div>

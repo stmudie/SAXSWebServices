@@ -24,7 +24,12 @@
 		<script src="{{ url_for('secprofiles.static', filename='highcharts/highcharts.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='highcharts/modules/exporting.js')}}"></script>
 
+		<link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
+		
   <style>
+	
+	H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;margin-bottom: 10px;}
+	
 	.ui-progressbar {
 		position: relative;
 	}
@@ -811,7 +816,7 @@ $(function () {
 </head>
 <body>
 
-<div id="MessageDialog" title="Message"></div>
+<div id="MessageDialog" title="Messafge"></div>
 
 <div id="dialog" title="Progress">
 	<div id="progressbar"><div class="progress-label"></div></div>
@@ -823,7 +828,8 @@ $(function () {
 </div>
 
 <div class="inputFields" style="float: left; padding: 10px; border: 2px solid; background: #DADCEF; height: 1200px">
-	<h3> Files </h3>
+	<H7>SEC Profiles</H7>
+	<h3 style="margin-top: 0px;"> Files </h3>
 	<ul id="filelistmenu" style="overflow-y: scroll; overflow-x: hidden; height:100px">
 	</ul>
     <h3> Averaging </h3>

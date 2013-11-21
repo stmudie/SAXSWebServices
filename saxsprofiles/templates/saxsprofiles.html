@@ -17,7 +17,13 @@
 		<script src="{{ url_for('saxsprofiles.static', filename='verticalCheckPlugin.js')}}"></script>
 		<script src="{{ url_for('saxsprofiles.static', filename='highcharts/highcharts.js')}}"></script>
 		<script src="{{ url_for('saxsprofiles.static', filename='highcharts/modules/exporting.js')}}"></script>
+		
+		<link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
 
+		<style>
+			H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;}
+		</style>
+		
 <script type="text/javascript">
 			
 WEB_SOCKET_SWF_LOCATION = "{{ url_for('saxsprofiles.static', filename='WebSocketMain.swf')}}";
@@ -213,7 +219,7 @@ $(function () {
 </script>
 </head>
 <body>
-
+<h7>SAXS Profiles</h7>
 <div id="tabs">
 	<ul>
 		<li><a href="#tabs-1">Raw Profiles</a></li>
