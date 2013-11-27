@@ -650,7 +650,7 @@
 				}
 			});
 			$("#initialise").button().click(function(){
-				if (globalbeamline == 'SAXS'){
+				if (globalbeamline == 'SAXS' || globalbeamline == 'MUDIES'){
   					if (saveScan() != -1) {
 						socket.emit("initialise",globalepn, globalscan);
 					}
