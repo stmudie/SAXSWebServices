@@ -43,6 +43,14 @@
 	<style>
 	H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;}
 	H8 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 16pt;}
+	
+	.ui-autocomplete-category {
+		font-weight: bold;
+		padding: .2em .4em;
+		margin: .8em 0 .2em;
+		line-height: 1.5;
+	}
+	
 	/* styles for slickgrid */
 	.centre-span {text-align: center;}
 	.num-column {border-right-color: silver; border-right-style: solid; background: #f5f5f5; color: gray; text-align: right; font-size: 10px;}
@@ -65,6 +73,9 @@
 	
 	.loop-div {float: left; padding-right:10px; padding-top:15px;}
 	.clear-button {float: right;}
+	.share-button {background: rgb(39, 145, 198) !important;color: rgb(240,240,240) !important;}
+	.share-button:hover {background: rgb(41, 128, 178) !important;color: rgb(255,255,255) !important;}
+	.share-button:active {background: rgb(0, 178, 255) !important;color: rgb(255,255,255) !important;}
 	
 	/*styles for the Start Scan Tab*/
 	.stop-button {background: rgb(200,40,40) !important;color: rgb(240,240,240) !important;}
@@ -76,6 +87,13 @@
 	.run-button {background: rgb(40,200,40) !important;}
 	.run-button:hover {background: rgb(40,180,40) !important;color: rgb(255,255,255) !important;}
 	.run-button:active {background: rgb(0,255,0) !important; color: rgb(0,0,0) !important;}
+	/* ****** */
+	
+	/*styles for shared dialog*/
+	#shared-list .ui-selecting { background: #FECA40; }
+	#shared-list .ui-selected { background: #F39814; color: white; }
+	#shared-list { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+	#shared-list li { margin: 1px; padding: 0.2em; font-size: 1em; height: 10px; }
 	/* ****** */
 	
 	#topbar {padding: 10px 5px;}
@@ -100,12 +118,28 @@
 			
 		}
 		
+		$.widget( "custom.catcomplete", $.ui.autocomplete, {
+			_renderMenu: function( ul, items ) {
+				var that = this,
+				currentCategory = "";
+				$.each( items, function( index, item ) {
+					if ( item.category != currentCategory ) {
+						ul.append( "<li class='ui-autocomplete-category'>" + item.category + "</li>" );
+						currentCategory = item.category;
+					}
+					that._renderItemData( ul, item );
+				});
+			}
+		});
+		
 		// socket.io specific code
 		var socket = io.connect('/genericscan');
 		var globalepn;
 		var globalscan;
 		var globalscanlist;
 		var globalbeamline = 'None';
+		
+		
 		
 		socket.on('connect', function(){
 			socket.emit('connect')
@@ -133,9 +167,30 @@
 			}
 		});
 		
-		socket.on('loadlist', function (list) {
-			globalscanlist = list;
-			$( "#scanname" ).autocomplete( "option", "source", list);
+		socket.on('loadlist', function (epnlist, beamlinelist) {
+			console.log(epnlist);
+			console.log(beamlinelist);
+			globalscanlist = [];
+			
+			for (var epn in epnlist) {
+				epnlist[epn].forEach(function(s){
+					if (JSON.stringify(globalscanlist).indexOf(JSON.stringify({label:s,category:epn})) <0){	
+						globalscanlist.push({label:s,category:epn})
+					}
+				})
+			};
+			
+			beamlinelist.forEach(function(e){
+				if (JSON.stringify(globalscanlist).indexOf(JSON.stringify({label:e,category:"Beamline"})) <0){
+					globalscanlist.push({label:e,category:"Beamline"})
+				}
+			});
+			$( "#scanname" ).catcomplete( "option", "source", globalscanlist);
+		});
+		
+		socket.on('shares', function(shares){
+			$("#shared-list").html('');
+			shares.forEach(function(s) { $("#shared-list").html($("#shared-list").html() + '<li class="ui-widget-content">'+s+'</li>')});
 		});
 		
 		socket.on('scandata', function(epn,scan,data){
@@ -146,6 +201,7 @@
 			globalscan = scan;
 			
 			console.log('load:' + globalepn + " " + globalscan);
+			
 			
 			$("#qrimage").attr('src','/genericscan/qrcode/' + epn + '/' + scan);
 			$("#qrimagelink").attr('href','/genericscan/qrcode/' + epn + '/' + scan);
@@ -425,7 +481,7 @@
 				alert('No Scan Name given. Please Enter Name.');
 				return -1;
 			}
-			var filenames = $('#scanname').autocomplete( "option", "source");
+			var filenames = $('#scanname').catcomplete( "option", "source");
 				if (filenames != null) {
 					if (filenames.indexOf(scanname)!=-1){
 					ok = confirm('Overwrite ' + scanname + '?');
@@ -622,12 +678,22 @@
 				}
 			});
 			$("#load").click(function(){
-				if (globalscanlist.indexOf($("#scanname").val()) == -1) {
+				knownFlag = 0;
+				globalscanlist.forEach(function(e){
+					if(e.label == $("#scanname").val()){
+						globalscan = e.label;
+						globalepn = e.category;
+						knownFlag = 1;
+					}
+				});
+				if (knownFlag == 0) {
 					alert("Unknown scan");
 					return
 				}
-				globalscan = $("#scanname").val();
 				socket.emit("load",globalepn,globalscan);
+			});
+			$("#share").button().click(function(){
+				$( "#share-popup" ).dialog( "open" );
 			});
 			$(".clear-button").button().click(function(){
 				loopnum = this.id.slice(5,6) - 1;
@@ -694,8 +760,8 @@
 			$("#scanrun").click(function(){
 				buildNames();
 			});
-			$("#scanname").autocomplete({minLength:0})
-				.focus(function(){$(this).autocomplete('search', $(this).val())});
+			$("#scanname").catcomplete({minLength:0})
+				.focus(function(){$(this).catcomplete('search', $(this).val())});
 			$("#nameorder").autocomplete({minLength:0, source: looplist()})
 				.focus(function(){$(this).autocomplete('search', "")});
 			$("#userepn").change(function(){
@@ -946,6 +1012,31 @@
 				});
 				fillGrid.push(tempFillGrid);
 			};
+			
+			$(function() {
+				$( "#share-popup" ).dialog({
+					autoOpen: false,
+					modal: true,
+					buttons: {
+						"Add User": function(){
+							socket.emit('addshare',globalepn,globalscan,$('#share-email').val());
+						},
+						"Delete Selected" : function(){
+							deleteArray = [];
+							$.each($("#shared-list").children(".ui-selected"), function(index, value){ deleteArray.push(value.innerText)});
+							$("#shared-list").children(".ui-selected").remove();
+							socket.emit('deleteshare', globalepn, globalscan, deleteArray);
+						},
+						"Exit": function(){
+							$(this).dialog("close");
+						}
+					}
+				});
+			});
+			$(function() {
+				$( "#shared-list" ).selectable();
+			});
+			
 		})
 
 		var posGrid =[];
@@ -1078,6 +1169,7 @@
 	<button id="save">Save</button>
 	<button id="load">Load</button>
 	<button id="StopTop">Stop</button>
+	<button id="share" class="share-button">Share</button>
 	<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
 </span>	
 </div>
@@ -1134,8 +1226,13 @@
 	</div>
 </div>
 
+<div id="share-popup">
+	<ol id="shared-list">
+	</ol>
+	<label for="share-email">Email: </label><input id="share-email">
+</div>
+
 </div>
 
 </body>
 </html>
-5

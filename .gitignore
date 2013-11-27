@@ -1,6 +1,7 @@
 *.pyc
 *~
 *.komodoproject
+*.rdb
 .gitk*
 .idea/*
 .DS_Store

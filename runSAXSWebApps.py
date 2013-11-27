@@ -46,10 +46,11 @@ app.register_blueprint(landingpage_app, url_prefix='/static')
 
 @app.route("/socket.io/<path:path>")
 def run_socketio(path):
+    
     if vbl.current_user != None:
         user = vbl.current_user['email']
     else :
-        user = 'Default_123'
+        user = 'Beamline'
     
     print beamline.current
     
