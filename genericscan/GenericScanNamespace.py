@@ -91,6 +91,7 @@ class GenericScanNamespace(BaseNamespace):
         epnscans = []
         beamlinescans = []
         epnscansdict = {self.request['epn'][0]:[]}
+        beamlinescansdict = {'Beamline':[]}
         if self.request['epn'][0] != 'Beamline':
             epnscans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
             for scan in epnscans:
@@ -104,8 +105,17 @@ class GenericScanNamespace(BaseNamespace):
                     epnscansdict[self.request['epn'][0]].append(scan)
         if self.request['beamline'] != None:
             beamlinescans = list(self.redis.smembers('generic:' + 'Beamline' + ':scans'))
-        print epnscansdict
-        self.emit('loadlist',epnscansdict,beamlinescans)
+            for scan in beamlinescans:
+                if len(scan.split(':')) == 2:
+                    epn,scan = scan.split(':')
+                    try:
+                        beamlinescansdict[epn].append(scan)
+                    except Exception:
+                        beamlinescansdict[epn]=[scan]
+                else:
+                    beamlinescansdict['Beamline'].append(scan)
+        
+        self.emit('loadlist',epnscansdict,beamlinescansdict)
     
 
     def initialise(self,epn,scan,type='all'):
