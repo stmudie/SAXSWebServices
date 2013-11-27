@@ -44,15 +44,14 @@ class GenericScanNamespace(BaseNamespace):
          
         self.emit('beamline', self.request['beamline'])
         self.emit('epn', self.request['epn'][0])
-        scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
-        self.emit('loadlist',scans)
+        self.sendlist()
 
     def on_changeepn(self, user_epn):
         print 'changeepn'
         self.request['epn'][0]=user_epn
         self.emit('epn', self.request['epn'][0])
         scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
-        self.emit('loadlist',scans)
+        self.sendlist()
 
     def on_save(self, data):
         epn = self.request['epn'][0]
@@ -60,7 +59,7 @@ class GenericScanNamespace(BaseNamespace):
         self.redis.sadd('generic:' + epn + ':scans', data['scanname'])
         self.redis.set('generic:' + epn + ':scan:' + data['scanname'], pickle.dumps(data))
         scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
-        self.emit('loadlist',scans)
+        self.sendlist()
  
     def on_load(self, epn, scan):
         print 'on load'
@@ -69,8 +68,45 @@ class GenericScanNamespace(BaseNamespace):
             data = pickle.loads(self.redis.get('generic:' + epn + ':scan:' + scan))
         else :
             data = ''
-        
+
         self.emit('scandata', epn, scan, data)
+
+        shares = self.redis.smembers('generic:' + epn + ':scan:' + scan + ':shares')
+        self.emit('shares', list(shares))
+
+    def on_addshare(self, epn, scan, share):
+        self.redis.sadd('generic:' + share + ':scans', epn +':'+ scan)
+        self.redis.sadd('generic:' + epn + ':scan:' + scan + ':shares', share)
+        shares = self.redis.smembers('generic:' + epn + ':scan:' + scan + ':shares')
+        self.emit('shares', list(shares))
+
+    def on_deleteshare(self, epn, scan, shares):
+        for share in shares:
+            self.redis.srem('generic:' + epn + ':scan:' + scan + ':shares', share)
+            self.redis.srem('generic:' + share + ':scans', epn +':'+ scan)
+        shares = self.redis.smembers('generic:' + epn + ':scan:' + scan + ':shares')
+        self.emit('shares', list(shares))
+
+    def sendlist(self):
+        epnscans = []
+        beamlinescans = []
+        epnscansdict = {self.request['epn'][0]:[]}
+        if self.request['epn'][0] != 'Beamline':
+            epnscans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
+            for scan in epnscans:
+                if len(scan.split(':')) == 2:
+                    epn,scan = scan.split(':')
+                    try:
+                        epnscansdict[epn].append(scan)
+                    except Exception:
+                        epnscansdict[epn]=[scan]
+                else:
+                    epnscansdict[self.request['epn'][0]].append(scan)
+        if self.request['beamline'] != None:
+            beamlinescans = list(self.redis.smembers('generic:' + 'Beamline' + ':scans'))
+        print epnscansdict
+        self.emit('loadlist',epnscansdict,beamlinescans)
+    
 
     def initialise(self,epn,scan,type='all'):
         
