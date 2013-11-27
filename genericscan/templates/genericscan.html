@@ -180,11 +180,13 @@
 				})
 			};
 			
-			beamlinelist.forEach(function(e){
-				if (JSON.stringify(globalscanlist).indexOf(JSON.stringify({label:e,category:"Beamline"})) <0){
-					globalscanlist.push({label:e,category:"Beamline"})
-				}
-			});
+			for (var epn in beamlinelist) {
+				beamlinelist[epn].forEach(function(e){
+					if (JSON.stringify(globalscanlist).indexOf(JSON.stringify({label:e,category:"Beamline"})) <0){
+						globalscanlist.push({label:epn+':'+e,category:"Beamline"})
+					}
+				})
+			};
 			$( "#scanname" ).catcomplete( "option", "source", globalscanlist);
 		});
 		
