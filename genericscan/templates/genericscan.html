@@ -182,8 +182,8 @@
 			
 			for (var epn in beamlinelist) {
 				beamlinelist[epn].forEach(function(e){
-					if (JSON.stringify(globalscanlist).indexOf(JSON.stringify({label:e,category:"Beamline"})) <0){
-						globalscanlist.push({label:epn+':'+e,category:"Beamline"})
+					if (JSON.stringify(globalscanlist).indexOf(JSON.stringify({label:e,category:epn})) <0){
+						globalscanlist.push({label:epn+':'+e,category:"Beamline",value:e})
 					}
 				})
 			};
@@ -686,7 +686,14 @@
 						globalscan = e.label;
 						globalepn = e.category;
 						knownFlag = 1;
+					} else {
+					        if(e.value == $("#scanname").val()){
+							globalscan = e.value;
+							globalepn = e.label.split(':')[0];
+							knownFlag = 1;
+						}
 					}
+                                        
 				});
 				if (knownFlag == 0) {
 					alert("Unknown scan");

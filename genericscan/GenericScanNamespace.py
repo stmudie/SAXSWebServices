@@ -63,6 +63,8 @@ class GenericScanNamespace(BaseNamespace):
  
     def on_load(self, epn, scan):
         print 'on load'
+        print epn
+        print scan
         redisData = self.redis.get('generic:' + epn + ':scan:' + scan)
         if redisData != None:
             data = pickle.loads(self.redis.get('generic:' + epn + ':scan:' + scan))
