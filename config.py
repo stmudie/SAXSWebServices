@@ -2,6 +2,7 @@ SECRET_KEY = 'PAWR#$asd%EH'
 DEBUG = True
 
 BEAMLINE_NETWORKS = {
+    "MUDIES":"10.6.0.143",
     "SAXS":"10.138.0.0/16",
     "LOCAL" :"127.0.0.1"
 }
