@@ -135,6 +135,7 @@
 		// socket.io specific code
 		var socket = io.connect('/genericscan');
 		var globalepn;
+		var loggedinepn;
 		var globalscan;
 		var globalscanlist;
 		var globalbeamline = 'None';
@@ -145,6 +146,10 @@
 			socket.emit('connect')
 		});
 	
+		socket.on('message',function(message){
+			alert(message);
+		})
+		
                 socket.on('beamline', function(beamline){
                     if (beamline != null){
 			globalbeamline = beamline;
@@ -157,6 +162,7 @@
 			if ('{{epn}}' != '' && '{{epn}}' != epn) {
 				socket.emit('changeepn','{{epn}}')
 			} else {
+				loggedinepn = epn;
 				globalepn = epn;
 				$("#epnTitle").html('Current USER/EPN: ' + globalepn);
 				if (epn != undefined && '{{scan}}' != '')
@@ -694,6 +700,9 @@
 				}
 				socket.emit("load",globalepn,globalscan);
 			});
+			$("#delete").click(function(){
+				socket.emit("delete",globalepn,globalscan);
+			});
 			$("#share").button().click(function(){
 				$( "#share-popup" ).dialog( "open" );
 			});
@@ -1170,7 +1179,8 @@
 	<input id="scanname"></input>
 	<button id="save">Save</button>
 	<button id="load">Load</button>
-	<button id="StopTop">Stop</button>
+	<button id="delete">Delete</button>
+	<!--<button id="StopTop">Stop</button>-->
 	<button id="share" class="share-button">Share</button>
 	<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
 </span>	

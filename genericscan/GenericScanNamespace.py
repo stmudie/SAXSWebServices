@@ -61,6 +61,18 @@ class GenericScanNamespace(BaseNamespace):
         scans = list(self.redis.smembers('generic:' + self.request['epn'][0] + ':scans'))
         self.sendlist()
  
+    def on_delete(self, epn,scan):
+        if epn != self.request['epn'][0]:
+            self.emit('message', "You can't delete someone elses scan. Change sharing settings if you don't want to see it.")
+        else :
+            self.redis.delete('generic:' + epn + ':scan:' + scan)
+            self.redis.srem('generic:' + epn + 'scans', scan)
+            sharedepns = self.redis.smembers('generic:' + epn + ':scan:' + scan + ':shares')
+            self.redis.delete('generic:' + epn + ':scan:' + scan + ':shares')
+            for e in sharedepns:
+                self.redis.srem('generic:' + e + ':scans', epn +':'+ scan)
+            
+ 
     def on_load(self, epn, scan):
         print 'on load'
         redisData = self.redis.get('generic:' + epn + ':scan:' + scan)
@@ -171,6 +183,11 @@ class GenericScanNamespace(BaseNamespace):
             #Set Delay
             result += caput(scanPV+'DDLY', int(data['delay'][loop-1] or 0))
             
+            #Set Positioner After-Scan Mode (PASM) to PRIOR POS if any positioners relative, otherwise set to STAY
+            #This ensures relative scans work correctly
+            relative = 'Relative' in data['relative'][(loop-1)*3:(loop)*3]
+            result += caput(scanPV+'PASM','PRIOR POS' if relative else 'STAY')
+                        
             #Index Array Positioner
             if len(filenameString) > 0:
                 result += caput(scanPV+'R4PV', indexPV + ':arrayIndex' + str(loop))
@@ -202,7 +219,7 @@ class GenericScanNamespace(BaseNamespace):
                 result += caput(scanPV+'R'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
                 result += caput(scanPV+'P'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
                 result += caput(scanPV+'P'+str(1+posNum)+'AR', data['relative'][absPos]=='Relative')
-                
+                                
                 if scantype == 'Linear':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
                     result += caput(scanPV+'P'+str(1+posNum)+'SP', start)
@@ -221,7 +238,7 @@ class GenericScanNamespace(BaseNamespace):
                     tableCount = tableCount + 1
                     
                 else:
-                    pass  
+                    pass
 
         result += caput(indexPV + ':arrayIndex1',0)
         result += caput(indexPV + ':arrayIndex2',0)
