@@ -6,9 +6,11 @@ import time
 
 # Base PVS
 indexPV = "13INDEXARRAY:array"
-#indexPV = "SMTESTINDEX:array"
+indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
-#IOCPV = 'SMTEST:'
+IOCPV = 'SMTEST:'
+triggerPV = '13PIL1:cam1:Acquire'
+triggerPV = ''
 
 def xstr(s):
     if s is None:
@@ -63,15 +65,15 @@ class GenericScanNamespace(BaseNamespace):
  
     def on_delete(self, epn,scan):
         if epn != self.request['epn'][0]:
-            self.emit('message', "You can't delete someone elses scan. Change sharing settings if you don't want to see it.")
+            self.emit('message', "You can't delete someone else's scan. Change sharing settings if you don't want to see it.")
         else :
             self.redis.delete('generic:' + epn + ':scan:' + scan)
-            self.redis.srem('generic:' + epn + 'scans', scan)
+            self.redis.srem('generic:' + epn + ':scans', scan)
             sharedepns = self.redis.smembers('generic:' + epn + ':scan:' + scan + ':shares')
             self.redis.delete('generic:' + epn + ':scan:' + scan + ':shares')
             for e in sharedepns:
                 self.redis.srem('generic:' + e + ':scans', epn +':'+ scan)
-            
+            self.sendlist()
  
     def on_load(self, epn, scan):
         print 'on load'
@@ -174,7 +176,7 @@ class GenericScanNamespace(BaseNamespace):
             
             #Detector Triggers
             if loop == 1 :
-                result += caput(scanPV+'T1PV','13PIL1:cam1:Acquire')
+                result += caput(scanPV+'T1PV',triggerPV)
             else :
                 result += caput(scanPV+'T1PV','%sscan%d.EXSC' % (IOCPV,loop-1))
             
@@ -198,6 +200,10 @@ class GenericScanNamespace(BaseNamespace):
                 result += caput(scanPV+'P4SP', 0)
                 result += caput(scanPV+'P4EP', number-1)            
             
+                result += caput(indexPV + ':arrayIndex1',0)
+                result += caput(indexPV + ':arrayIndex2',0)
+                result += caput(indexPV + ':arrayIndex3',0)
+           
             for posNum in range(3) :
                 absPos = (loop-1)*3+posNum
                 
@@ -241,10 +247,6 @@ class GenericScanNamespace(BaseNamespace):
                     
                 else:
                     pass
-
-        result += caput(indexPV + ':arrayIndex1',0)
-        result += caput(indexPV + ':arrayIndex2',0)
-        result += caput(indexPV + ':arrayIndex3',0)
 
         #Determine which scan level to start. One less than the lowest with no positions.
         if ((data['number'][0] or 0) > 0):

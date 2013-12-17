@@ -31,7 +31,16 @@ def well2(plate):
 @wellPlate_app.route("/qrcode/<epn>/<plate>/")
 @beamline_or_vbl
 def serve_img(epn,plate):
-    img = qrcode.make('http://aswebsaxs/wellPlates/' + epn + '/' + plate)
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=5,
+        border=4,
+    )
+    qr.add_data('well' + epn + ':' + plate)
+    qr.make(fit=True)
+    img = qr.make_image()
+    
     return serve_pil_image(img)
 
 @wellPlate_app.route("/qrcode")

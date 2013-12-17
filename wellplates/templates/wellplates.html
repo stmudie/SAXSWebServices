@@ -14,6 +14,7 @@
 	<script src="{{ url_for('wellPlate.static', filename='jquery/ui/jquery.ui.selectable.js')}}"></script>
 	<script src="{{ url_for('wellPlate.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
 	<script src="{{ url_for('wellPlate.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
+	<script src="{{ url_for('wellPlate.static', filename='jquery/printThis.js')}}"></script>
 	<link rel="stylesheet" href="{{ url_for('wellPlate.static', filename='demos.css')}}">
 	
 	<link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
@@ -22,7 +23,14 @@
 	
 	H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;}
 	H8 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 16pt;}
-	body {background: #F9F9F9;}
+	body {background: #C69999;}
+	
+	.ui-autocomplete-category {
+		font-weight: bold;
+		padding: .2em .4em;
+		margin: .8em 0 .2em;
+		line-height: 1.5;
+	}
 	
 	/*styles for the Run Order Tab*/
 	.sortableRowNamesOrder {list-style-type: none; float: left; margin: 0; margin-top: 10px; margin-right: 5px; padding: 0; width: 25px;}
@@ -42,6 +50,26 @@
 	.run-button {background: rgb(40,200,40) !important;}
 	.run-button:hover {background: rgb(40,180,40) !important;color: rgb(255,255,255) !important;}
 	.run-button:active {background: rgb(0,255,0) !important; color: rgb(0,0,0) !important;}
+	
+	.share-button {background: rgb(39, 145, 198) !important;color: rgb(240,240,240) !important;}
+	.share-button:hover {background: rgb(41, 128, 178) !important;color: rgb(255,255,255) !important;}
+	.share-button:active {background: rgb(0, 178, 255) !important;color: rgb(255,255,255) !important;}
+	
+	/* ****** */
+	
+	/*styles for shared dialog*/
+	#shared-list .ui-selecting { background: #FECA40; }
+	#shared-list .ui-selected { background: #F39814; color: white; }
+	#shared-list { list-style-type: none; margin: 0; padding: 0; width: 300px; }
+	#shared-list li { margin: 1px; padding: 0.2em; font-size: 1em; height: 10px; width:300px }
+	/* ****** */
+	
+	/*styles for qr print dialog*/
+	#qr-list .ui-selecting { background: #FECA40; }
+	#qr-list .ui-selected { background: #F39814; color: white; }
+	#qr-list { list-style-type: none; margin: 0; padding: 0; width: 600px; }
+	/*Put the following inline cause print plugin not using this css for some reason*/
+	/*#qr-list li { margin: 1px; padding: 0.2em; font-size: 1em; float: left; text-align: center; height: 100px; width:100px }*/
 	/* ****** */
 	
 	#topbar {padding: 10px 5px;}
@@ -69,6 +97,20 @@
 		WEB_SOCKET_SWF_LOCATION = "{{ url_for('wellPlate.static', filename='WebSocketMain.swf')}}";
 		WEB_SOCKET_DEBUG = true;
 		
+		$.widget( "custom.catcomplete", $.ui.autocomplete, {
+			_renderMenu: function( ul, items ) {
+				var that = this,
+				currentCategory = "";
+				$.each( items, function( index, item ) {
+					if ( item.category != currentCategory ) {
+						ul.append( "<li class='ui-autocomplete-category'>" + item.category + "</li>" );
+						currentCategory = item.category;
+					}
+					that._renderItemData( ul, item );
+				});
+			}
+		});
+		
 		// socket.io specific code
 		var socket = io.connect('/wellplates');
 		var globalepn;
@@ -79,6 +121,10 @@
 		socket.on('connect', function(){
 			socket.emit('connect')
 		});
+		
+		socket.on('message',function(message){
+			alert(message);
+		})
 
                 socket.on('beamline', function(beamline){
                     if (beamline !=null){
@@ -96,6 +142,7 @@
 			if ('{{epn}}' != '' && '{{epn}}' != epn) {
 				socket.emit('changeepn','{{epn}}')
 			} else {
+				loggedinepn = epn;
 				globalepn = epn;
 				$("#epnTitle").html('Current USER/EPN: ' + globalepn);
 				if (epn != undefined && '{{plate}}' != '')
@@ -106,8 +153,30 @@
 			}
 		});
 		
-		socket.on('loadlist', function (list) {
-			$( "#platename" ).autocomplete( "option", "source", list);
+		socket.on('loadlist', function (epnlist, beamlinelist) {
+			globalplatelist = [];
+			
+			for (var epn in epnlist) {
+				epnlist[epn].forEach(function(s){
+					if (JSON.stringify(globalplatelist).indexOf(JSON.stringify({label:s,category:epn})) <0){	
+						globalplatelist.push({label:s,category:epn})
+					}
+				})
+			};
+			
+			for (var epn in beamlinelist) {
+				beamlinelist[epn].forEach(function(e){
+					if (JSON.stringify(globalplatelist).indexOf(JSON.stringify({label:e,category:epn})) <0){
+						globalplatelist.push({label:epn+':'+e,category:"Beamline",value:e})
+					}
+				})
+			};
+			$( "#platename" ).catcomplete( "option", "source", globalplatelist);
+		});
+		
+		socket.on('shares', function(shares){
+			$("#shared-list").html('');
+			shares.forEach(function(s) { $("#shared-list").html($("#shared-list").html() + '<li class="ui-widget-content">'+s+'</li>')});
 		});
 		
 		socket.on('platedata', function(epn,plate,data){
@@ -294,7 +363,7 @@
 				alert('No name given.');
 				return -1;
 			}
-			var filenames = $('#platename').autocomplete( "option", "source");
+			var filenames = $('#platename').catcomplete( "option", "source");
 			if (filenames.indexOf(platename)!=-1){
 				ok = confirm('Overwrite ' + platename + '?');
 				if (ok == false){
@@ -428,8 +497,66 @@
 				}
 			});
 			$("#load").click(function(){
-				globalplate = $("#platename").val()
+				knownFlag = 0;
+				globalplatelist.forEach(function(e){
+					if(e.label == $("#platename").val()){
+						globalplate = e.label;
+						globalepn = e.category;
+						knownFlag = 1;
+					} else {
+					        if(e.value == $("#platename").val()){
+							globalplate = e.value;
+							globalepn = e.label.split(':')[0];
+							knownFlag = 1;
+						}
+					}
+                                        
+				});
+				if (knownFlag == 0) {
+					alert("Unknown scan");
+					return
+				}
 				socket.emit("load",globalepn,globalplate);
+			});
+			$("#delete").click(function(){
+				socket.emit("delete",globalepn,globalplate);
+				
+				$(".sampleName").each(function(index){
+					$(this).val('').change();
+				});
+				$(".sampleConc").each(function(index){
+					$(this).val('').change();
+					//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
+				});
+				$(".sampleMW").each(function(index){
+					$(this).val('').change();
+					//sampleColour($(this.parentNode.parentNode),data.sampleConc[index]);
+				});
+				$(".washType").each(function(index){
+					$(this).val('').change();
+				});
+				$(".sampleType").each(function(index){
+					$(this).val('').change();
+					//sampleTypeColour($(this.parentNode),data.sampleType[index]);
+				});
+				var range = new Array();
+				for(var i = 0; i < 95; i++) {
+					range.push(i);
+				}
+				
+				resortSortableOrder(range);
+				
+				$("#platename").val("");
+				
+			});
+			$("#share").button().click(function(){
+				$( "#share-popup" ).dialog( "open" );
+			});
+			$("#openqrprinter").button().click(function(){
+				$("#qr-list").html("");
+				globalplatelist.forEach(function(s) { $("#qr-list").html($("#qr-list").html() + '<li class="ui-widget-content" style="margin: 1px; font-size: 1em; float: left; text-align: center; height: 30px; width:200px">'+s.label+'<img src=/wellplates/qrcode/' + s.category + '/' + s.label + ' height=30px style="vertical-align: middle"> </li>')});
+				$( "#qr-printer" ).dialog( "open" );
+				
 			});
 			$("#run").click(function(){console.log( '{{test}}' )});
 			$("#initialise").button().click(function(){
@@ -682,10 +809,46 @@
 				$(".sortableOrder").sortable("disable");
 				$(".sortableOrder").css('opacity', 1);
 			});
-			$("#platename").autocomplete({minLength:0})
-				.focus(function(){$(this).autocomplete('search', $(this).val())});
+			$("#platename").catcomplete({minLength:0})
+				.focus(function(){$(this).catcomplete('search', $(this).val())});
 			$("#userepn").change(function(){
 				socket.emit('changeepn',$(this).val());
+			});
+			
+			$( "#share-popup" ).dialog({
+				autoOpen: false,
+				modal: true,
+				width: 350,
+				buttons: {
+					"Add User": function(){
+						socket.emit('addshare',globalepn,globalplate,$('#share-email').val());
+					},
+					"Delete Selected" : function(){
+						deleteArray = [];
+						$.each($("#shared-list").children(".ui-selected"), function(index, value){ deleteArray.push(value.innerText)});
+						$("#shared-list").children(".ui-selected").remove();
+						socket.emit('deleteshare', globalepn, globalplate, deleteArray);
+					},
+					"Exit": function(){
+						$(this).dialog("close");
+					}
+				}
+			});
+			$(function() {
+				$( "#shared-list" ).selectable();
+			});
+			$(function() {
+				$( "#qr-list" ).selectable();
+			});
+			$( "#qr-printer" ).dialog({
+				autoOpen: false,
+				modal: true,
+				width: 600,
+				buttons: {
+					"Print": function(){
+						$('#qr-printer').printThis({printContainer: false});
+					}
+				}
 			});
 		});
 	</script>
@@ -702,8 +865,11 @@
 	<input id="platename"></input>
 	<button id="save">Save</button>
 	<button id="load">Load</button>
-	<button id="StopTop">Stop</button>
+	<button id="delete">Delete</button>
+	<!--<button id="StopTop">Stop</button>-->
+	<button id="share" class="share-button">Share</button>
 	<a id="qrimagelink" href="{{ rel }}qrcode"><img id="qrimage" src="{{ rel }}qrcode" height=50px style="vertical-align: middle"></a>
+	<button id="openqrprinter">QR Printer</button>
 </span>
 </div>
 
@@ -831,6 +997,17 @@
 		{% endfor %}
 		
 	</div>
+</div>
+
+<div id="share-popup">
+	<ol id="shared-list">
+	</ol>
+	<label for="share-email">Email: </label><input id="share-email">
+</div>
+
+<div id="qr-printer">
+	<ol id="qr-list">
+	</ol>
 </div>
 
 </div>

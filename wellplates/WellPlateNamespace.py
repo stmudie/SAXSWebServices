@@ -17,23 +17,38 @@ class WellPlateNamespace(BaseNamespace):
 
         self.emit('beamline', self.request['beamline'])
         self.emit('epn', self.request['epn'][0])
-        plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
-        self.emit('loadlist',plates)
+        #plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
+        #self.emit('loadlist',plates)
+        self.sendlist()
 
     def on_changeepn(self, user_epn):
         print 'changeepn'
         self.request['epn'][0]=user_epn
         self.emit('epn', self.request['epn'][0])
-        plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
-        self.emit('loadlist',plates)
+        #plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
+        #self.emit('loadlist',plates)
+        self.sendlist()
 
     def on_save(self, data):
         epn = self.request['epn'][0]
         self.redis.sadd('well:epn', epn)
         self.redis.sadd('well:' + epn + ':plates', data['platename'])
         self.redis.set('well:' + epn + ':plate:' + data['platename'], pickle.dumps(data))
-        plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
-        self.emit('loadlist',plates)
+        #plates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
+        #self.emit('loadlist',plates)
+        self.sendlist()
+ 
+    def on_delete(self, epn,plate):
+        if epn != self.request['epn'][0]:
+            self.emit('message', "You can't delete someone else's plate. Change sharing settings if you don't want to see it.")
+        else :
+            self.redis.delete('well:' + epn + ':plate:' + plate)
+            self.redis.srem('well:' + epn + ':plates', plate)
+            sharedepns = self.redis.smembers('well:' + epn + ':plate:' + plate + ':shares')
+            self.redis.delete('well:' + epn + ':plate:' + plate + ':shares')
+            for e in sharedepns:
+                self.redis.srem('well:' + e + ':plates', epn +':'+ plate)
+            self.sendlist()
  
     def on_load(self, epn, plate):
         print 'on load'
@@ -44,6 +59,53 @@ class WellPlateNamespace(BaseNamespace):
             data = ''
         
         self.emit('platedata', epn, plate, data)
+        
+        shares = self.redis.smembers('well:' + epn + ':plate:' + plate + ':shares')
+        self.emit('shares', list(shares))
+
+    def on_addshare(self, epn, plate, share):
+        self.redis.sadd('well:' + share + ':plates', epn +':'+ plate)
+        self.redis.sadd('well:' + epn + ':plate:' + plate + ':shares', share)
+        shares = self.redis.smembers('well:' + epn + ':plate:' + plate + ':shares')
+        self.emit('shares', list(shares))
+
+    def on_deleteshare(self, epn, plate, shares):
+        for share in shares:
+            self.redis.srem('well:' + epn + ':plate:' + plate + ':shares', share)
+            self.redis.srem('well:' + share + ':plates', epn +':'+ plate)
+        shares = self.redis.smembers('well:' + epn + ':plate:' + plate + ':shares')
+        self.emit('shares', list(shares))
+
+    def sendlist(self):
+        epnplates = []
+        beamlineplates = []
+        epnplatesdict = {self.request['epn'][0]:[]}
+        beamlineplatesdict = {'Beamline':[]}
+        if self.request['epn'][0] != 'Beamline':
+            epnplates = list(self.redis.smembers('well:' + self.request['epn'][0] + ':plates'))
+            for plate in epnplates:
+                if len(plate.split(':')) == 2:
+                    epn,plate = plate.split(':')
+                    try:
+                        epnplatesdict[epn].append(plate)
+                    except Exception:
+                        epnplatesdict[epn]=[plate]
+                else:
+                    epnplatesdict[self.request['epn'][0]].append(plate)
+        if self.request['beamline'] != None:
+            beamlineplates = list(self.redis.smembers('well:' + 'Beamline' + ':plates'))
+            for plate in beamlineplates:
+                if len(plate.split(':')) == 2:
+                    epn,plate = plate.split(':')
+                    try:
+                        beamlineplatesdict[epn].append(plate)
+                    except Exception:
+                        beamlineplatesdict[epn]=[plate]
+                else:
+                    beamlineplatesdict['Beamline'].append(plate)
+        
+        self.emit('loadlist',epnplatesdict,beamlineplatesdict)
+
 
     def on_initialise(self,epn,plate,type='all'):
         data = pickle.loads(self.redis.get('well:' + epn + ':plate:' + plate))

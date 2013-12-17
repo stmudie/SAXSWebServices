@@ -174,8 +174,6 @@
 		});
 		
 		socket.on('loadlist', function (epnlist, beamlinelist) {
-			console.log(epnlist);
-			console.log(beamlinelist);
 			globalscanlist = [];
 			
 			for (var epn in epnlist) {
@@ -423,6 +421,15 @@
 			this.init();
 		};
 		
+		function clearloop(loopnum) {
+			fillData[loopnum]=([{rows:'Positioner'},{rows:'Type'},{rows:'Abs/Rel', position1:'Absolute', position2:'Absolute', position3:'Absolute'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'},{rows:'Delay (s)'}]);
+			fillGrid[loopnum].setData(fillData[loopnum]);
+			fillData[loopnum].getItemMetadata = formatColumns
+			fillGrid[loopnum].render();
+			posData[loopnum]= [{colNum:1}];
+			posGrid[loopnum].setData(posData[loopnum]);
+			posGrid[loopnum].render();
+		}
 			
 		function harvestData(){
 			var posIndex;
@@ -709,19 +716,20 @@
 			});
 			$("#delete").click(function(){
 				socket.emit("delete",globalepn,globalscan);
+				for (i=0;i<4;i++) {
+					clearloop(i);
+				}
+				$("#scanname").val("");
+				$('#nameorder').val('Loop1Loop2Loop3Loop4');
+				
+				
 			});
 			$("#share").button().click(function(){
 				$( "#share-popup" ).dialog( "open" );
 			});
 			$(".clear-button").button().click(function(){
 				loopnum = this.id.slice(5,6) - 1;
-				fillData[loopnum]=([{rows:'Positioner'},{rows:'Type'},{rows:'Abs/Rel', position1:'Absolute', position2:'Absolute', position3:'Absolute'},{rows:'Start'},{rows:'End'},{rows:'Step'},{rows:'Number'},{rows:'Delay (s)'}]);
-				fillGrid[loopnum].setData(fillData[loopnum]);
-				fillData[loopnum].getItemMetadata = formatColumns
-				fillGrid[loopnum].render();
-				posData[loopnum]= [{colNum:1}];
-				posGrid[loopnum].setData(posData[loopnum]);
-				posGrid[loopnum].render();
+				clearloop(loopnum);
 				
 			});
 			$("#run").button().click(function(){
