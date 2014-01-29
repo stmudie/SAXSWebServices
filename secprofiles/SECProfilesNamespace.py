@@ -23,11 +23,12 @@ class SECProfilesNamespace(BaseNamespace):
         self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
         
         redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
-        redisdb = int(redisdb)
         if redisIP == 'No Redis':
             self.redis = 'No Redis'
         else :
+            redisdb = int(redisdb)
             self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        print self.redis
     
     def sendSAXSProfile(self, name, data):
         filename = basename(data['filename'])
@@ -233,7 +234,10 @@ class SECProfilesNamespace(BaseNamespace):
     
     def find_rg_profiles(self, ):
         #for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/logfiletest"):
-        for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
+        #for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
+        redis,dataPath = self.request['REDIS']['LOG'].split(':')
+        print dataPath
+        for root, dirs, files in os.walk(dataPath):
             if 'analysis' in dirs:
                 print 'analysis'
                 index = dirs.index('analysis')
@@ -250,7 +254,7 @@ class SECProfilesNamespace(BaseNamespace):
             files = [f for f in self.find_rg_profiles()]
         else :
             files = list(self.redis.smembers("pipeline:sec:filenames"))
-            
+
         self.emit('File_List',files)
     
     def recv_connect(self):
