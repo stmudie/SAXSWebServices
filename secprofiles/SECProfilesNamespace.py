@@ -43,6 +43,8 @@ class SECProfilesNamespace(BaseNamespace):
         
         bufferDats = []
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
+            
         bufferNames = ['{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(bufferrange[0],bufferrange[1])]
         
         count = 0
@@ -62,6 +64,7 @@ class SECProfilesNamespace(BaseNamespace):
         profiles = []
         
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
         
         for profileNumber in range(data['range'][0],data['range'][1]):
             if (data['subtract'] == False):
@@ -93,6 +96,7 @@ class SECProfilesNamespace(BaseNamespace):
     def on_Load_Profile(self, data):
         
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
         profileNumber = data['position']
         
         if (data['subtract'] == False):
@@ -125,6 +129,7 @@ class SECProfilesNamespace(BaseNamespace):
         self.updateAverageBuffer(data['buffer'])
 
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
         averageDats =[]
         sampleDats = []       
         
@@ -158,18 +163,20 @@ class SECProfilesNamespace(BaseNamespace):
         print filename
         self.saveFilename = filename
         rawfilename = splitext(self.activeFile)[0]
+        rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
         if len(self.avSampleDat) == 1:
             self.avSampleDat[0].save('{0}/manual/{1}'.format(dirname(dirname(rawfilename)),filename))
         else:
-            basename = '_'.join(filename.split('.')[0].split('_')[0:-2])
+            basenamestr = '_'.join(filename.split('.')[0].split('_')[0:-2])
             rangedelta = (1+indexrange[1]-indexrange[0])/float(len(self.avSampleDat))
             slicemin = indexrange[0]
             for num,saveDat in enumerate(self.avSampleDat):
-                saveDat.save('{0}/manual/{1}_{2}_{3}.dat'.format(dirname(dirname(rawfilename)),basename,indexrange[0]+int(rangedelta*num),indexrange[0]+int(rangedelta*(num+1))-1))
+                saveDat.save('{0}/manual/{1}_{2}_{3}.dat'.format(dirname(dirname(rawfilename)),basenamestr,indexrange[0]+int(rangedelta*num),indexrange[0]+int(rangedelta*(num+1))-1))
     
     def on_SendPipeline(self):
         print 'SendPipeline'
         rawfilename = splitext(self.activeFile)[0]
+        rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
         if len(self.avSampleDat) == 1:
             urllib2.urlopen('{0}/{1}/{2}/manual/{3}.dat'.format(self.pipeurl,self.epn,self.exp,self.saveFilename))
         else:
