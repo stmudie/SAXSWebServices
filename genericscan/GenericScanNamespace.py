@@ -6,11 +6,11 @@ import time
 
 # Base PVS
 indexPV = "13INDEXARRAY:array"
-indexPV = "SMTESTINDEX:array"
+#indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
-IOCPV = 'SMTEST:'
+#IOCPV = 'SMTEST:'
 triggerPV = '13PIL1:cam1:Acquire'
-triggerPV = ''
+#triggerPV = ''
 
 def xstr(s):
     if s is None:
@@ -141,18 +141,32 @@ class GenericScanNamespace(BaseNamespace):
                 
         #Setup filenames
         filenames = []
-        num4 = int(data['number'][(data['nameorder'][3]-1)] or 1)
-        num3 = int(data['number'][(data['nameorder'][2]-1)] or 1)
-        num2 = int(data['number'][(data['nameorder'][1]-1)] or 1)
-        num1 = int(data['number'][(data['nameorder'][0]-1)] or 1)
-        
+        #num4 = int(data['number'][(data['nameorder'][3]-1)] or 1)
+        #num3 = int(data['number'][(data['nameorder'][2]-1)] or 1)
+        #num2 = int(data['number'][(data['nameorder'][1]-1)] or 1)
+        #num1 = int(data['number'][(data['nameorder'][0]-1)] or 1)
+       
+        num4 = int(data['number'][3] or 1)
+        num3 = int(data['number'][2] or 1)
+        num2 = int(data['number'][1] or 1)
+        num1 = int(data['number'][0] or 1)
+ 
+	print data['filenames']
+
         for pos4 in range(num4):
             for pos3 in range(num3):
                 for pos2 in range(num2):
                     for pos1 in range(num1):
                         #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
                        
-                        filenames.append(xstr(data['filenames'][(data['nameorder'][0]-1)][pos1]) + xstr(data['filenames'][(data['nameorder'][1]-1)][pos2]) + xstr(data['filenames'][(data['nameorder'][2]-1)][pos3]) + xstr(data['filenames'][(data['nameorder'][3]-1)][pos4]))
+                        fragment = []
+			fragment.append(xstr(data['filenames'][0][pos1]))
+			fragment.append(xstr(data['filenames'][1][pos2]))
+			fragment.append(xstr(data['filenames'][2][pos3]))
+			fragment.append(xstr(data['filenames'][3][pos4]))
+
+			filenames.append(fragment[data['nameorder'][0]-1] + fragment[data['nameorder'][1]-1] + fragment[data['nameorder'][2]-1] + fragment[data['nameorder'][3]-1])
+#                        filenames.append(xstr(data['filenames'][(data['nameorder'][0]-1)][pos1]) + xstr(data['filenames'][(data['nameorder'][1]-1)][pos2]) + xstr(data['filenames'][(data['nameorder'][2]-1)][pos3]) + xstr(data['filenames'][(data['nameorder'][3]-1)][pos4]))
 
         filenameString = "".join(filenames)
         filenameLen = list(running_sum([len(name) for name in filenames]))
