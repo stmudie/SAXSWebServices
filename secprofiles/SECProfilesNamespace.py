@@ -23,11 +23,12 @@ class SECProfilesNamespace(BaseNamespace):
         self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
         
         redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
-        redisdb = int(redisdb)
         if redisIP == 'No Redis':
             self.redis = 'No Redis'
         else :
+            redisdb = int(redisdb)
             self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        print self.redis
     
     def sendSAXSProfile(self, name, data):
         filename = basename(data['filename'])
@@ -42,6 +43,8 @@ class SECProfilesNamespace(BaseNamespace):
         
         bufferDats = []
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
+            
         bufferNames = ['{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(num).zfill(4)) for num in range(bufferrange[0],bufferrange[1])]
         
         count = 0
@@ -61,6 +64,7 @@ class SECProfilesNamespace(BaseNamespace):
         profiles = []
         
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
         
         for profileNumber in range(data['range'][0],data['range'][1]):
             if (data['subtract'] == False):
@@ -92,6 +96,7 @@ class SECProfilesNamespace(BaseNamespace):
     def on_Load_Profile(self, data):
         
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
         profileNumber = data['position']
         
         if (data['subtract'] == False):
@@ -124,6 +129,7 @@ class SECProfilesNamespace(BaseNamespace):
         self.updateAverageBuffer(data['buffer'])
 
         filename = splitext(self.activeFile)[0]
+        filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
         averageDats =[]
         sampleDats = []       
         
@@ -157,18 +163,20 @@ class SECProfilesNamespace(BaseNamespace):
         print filename
         self.saveFilename = filename
         rawfilename = splitext(self.activeFile)[0]
+        rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
         if len(self.avSampleDat) == 1:
             self.avSampleDat[0].save('{0}/manual/{1}'.format(dirname(dirname(rawfilename)),filename))
         else:
-            basename = '_'.join(filename.split('.')[0].split('_')[0:-2])
+            basenamestr = '_'.join(filename.split('.')[0].split('_')[0:-2])
             rangedelta = (1+indexrange[1]-indexrange[0])/float(len(self.avSampleDat))
             slicemin = indexrange[0]
             for num,saveDat in enumerate(self.avSampleDat):
-                saveDat.save('{0}/manual/{1}_{2}_{3}.dat'.format(dirname(dirname(rawfilename)),basename,indexrange[0]+int(rangedelta*num),indexrange[0]+int(rangedelta*(num+1))-1))
+                saveDat.save('{0}/manual/{1}_{2}_{3}.dat'.format(dirname(dirname(rawfilename)),basenamestr,indexrange[0]+int(rangedelta*num),indexrange[0]+int(rangedelta*(num+1))-1))
     
     def on_SendPipeline(self):
         print 'SendPipeline'
         rawfilename = splitext(self.activeFile)[0]
+        rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
         if len(self.avSampleDat) == 1:
             urllib2.urlopen('{0}/{1}/{2}/manual/{3}.dat'.format(self.pipeurl,self.epn,self.exp,self.saveFilename))
         else:
@@ -233,7 +241,10 @@ class SECProfilesNamespace(BaseNamespace):
     
     def find_rg_profiles(self, ):
         #for root, dirs, files in os.walk("/data/pilatus1M/Cycle_2013_3/logfiletest"):
-        for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
+        #for root, dirs, files in os.walk("/home/mudies/code/testdata/"):
+        redis,dataPath = self.request['REDIS']['LOG'].split(':')
+        print dataPath
+        for root, dirs, files in os.walk(dataPath):
             if 'analysis' in dirs:
                 print 'analysis'
                 index = dirs.index('analysis')
@@ -250,7 +261,7 @@ class SECProfilesNamespace(BaseNamespace):
             files = [f for f in self.find_rg_profiles()]
         else :
             files = list(self.redis.smembers("pipeline:sec:filenames"))
-            
+
         self.emit('File_List',files)
     
     def recv_connect(self):

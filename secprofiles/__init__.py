@@ -1,3 +1,6 @@
 from .secprofileslocal import secprofileslocal_app
-from .secprofiles import secprofiles_app
+try:
+    from .secprofiles import secprofiles_app
+except:
+    pass
 from .SECProfilesNamespace import SECProfilesNamespace

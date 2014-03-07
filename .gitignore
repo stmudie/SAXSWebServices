@@ -8,3 +8,5 @@
 .DS_Store
 # Specific local config for testing
 localconfig.py
+# virtualenv
+env/
