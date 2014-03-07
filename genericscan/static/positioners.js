@@ -5,3 +5,10 @@ var positionerStruct = {
     FakeTemperature: '',
     None: ''
 }
+var positionerTestStruct = {
+    SampleTableX: 'SMTEST:SMPL_TBL_X_MTR',
+    SampleTableY: 'SMTEST:SMPL_TBL_Y_MTR',
+    Omega: 'SMTEST:GSAX_OMG_MTR',
+    FakeTemperature: '',
+    None: ''
+}

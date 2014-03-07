@@ -13,5 +13,5 @@ def landing():
     return render_template("landingpage.html",user=user)
 
 @landingpage_app.route("/<path>")
-def static(path):
+def staticfile(path):
     return send_file('landingpage/static/%s' % (path,))

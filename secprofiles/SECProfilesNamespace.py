@@ -97,13 +97,16 @@ class SECProfilesNamespace(BaseNamespace):
         
         filename = splitext(self.activeFile)[0]
         filename = (join(dirname(filename),basename(filename).rsplit('_',2)[0]) if self.redis == 'No Redis' else filename)
+                       
         profileNumber = data['position']
-        
+        print data['subtract']
+                
         if (data['subtract'] == False):
             try:
                 sampleDat = DatFile('{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4)))
             except Exception:
                 self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(basename(filename),str(profileNumber).zfill(4))})
+                return
             
         else :
             if data['bufferrange'][0] == -1 and data['bufferrange'][1] == -1:
@@ -111,6 +114,7 @@ class SECProfilesNamespace(BaseNamespace):
                         sampleDat = DatFile('{0}_{1}.dat'.format(filename,str(profileNumber).zfill(4)))
                     except Exception:
                         self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(filename,str(profileNumber).zfill(4))})
+                        return
                     
             else :
                 self.updateAverageBuffer(data['bufferrange'])
@@ -118,6 +122,7 @@ class SECProfilesNamespace(BaseNamespace):
                     sampleDat = dat.subtract(DatFile('{0}/raw_dat/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(4))),self.avBufferDat)
                 except Exception:
                     self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(basename(filename),str(profileNumber).zfill(4))})
+                    return
          
         profile = zip(sampleDat.q, sampleDat.intensities, sampleDat.errors)
         self.sendSAXSProfile('Profile',{'filename': filename, 'profile': profile})
@@ -206,9 +211,12 @@ class SECProfilesNamespace(BaseNamespace):
         self.epn = basename(dirname(dirname(dirname(self.activeFile))))
 
         for n in name:
-            array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0]
-            self.emit(n, {'filename': self.activeFile, 'epn': self.epn, 'exp':self.exp, 'profile':array})
-
+            try:
+                array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0]
+                self.emit(n, {'filename': self.activeFile, 'epn': self.epn, 'exp':self.exp, 'profile':array})
+            except IndexError:
+                pass
+            
     def checkForNewRedisRgProfile(self):
         
         self.sub = self.redis.pubsub()

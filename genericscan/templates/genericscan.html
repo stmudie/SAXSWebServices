@@ -43,6 +43,7 @@
 	<style>
 	H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;}
 	H8 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 16pt;}
+	H9 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 28pt;font-weight: bolder;font-variant: small-caps;}
 	
 	.ui-autocomplete-category {
 		font-weight: bold;
@@ -70,6 +71,8 @@
 	.Delay .slick-cell{color: #949494; background: #EAE5F5;}
 	.Expanded.odd .slick-cell{color: #3F3F3F; background: #F9F7F4;}
 	.Expanded.even .slick-cell{color: #3F3F3F; background: #EFEDEA;}
+	.Current.Expanded.odd .slick-cell{color: #FFFFFF; background: #3794A3;}
+	.Current.Expanded.even .slick-cell{color: #FFFFFF; background: #3794A3;}
 	
 	.loop-div {float: left; padding-right:10px; padding-top:15px;}
 	.clear-button {float: right;}
@@ -95,6 +98,62 @@
 	#shared-list { list-style-type: none; margin: 0; padding: 0; width: 60%; }
 	#shared-list li { margin: 1px; padding: 0.2em; font-size: 1em; height: 10px; }
 	/* ****** */
+	
+	/*styles for scan finished dialog*/
+	
+	.scanfinished .ui-dialog-titlebar-close {
+		display: none;
+	}
+	
+	.ui-widget-overlay {
+		background: black;
+		opacity: 0.7;
+		-webkit-animation-name: flashbackground;
+		-webkit-animation-duration: 2s;
+		-webkit-animation-iteration-count: 1;
+		-webkit-animation-timing-function: ease-in-out;
+	}
+	
+	@-webkit-keyframes flashbackground {
+	    0% {
+		background: black;
+		opacity:0;
+	    }
+	    10% {
+		opacity:1.0;
+	    }
+	    20% {
+		opacity:0;
+	    }
+	    30% {
+		opacity:1.0;
+	    }
+	    40% {
+		opacity:0;
+	    }
+	    50% {
+		opacity:1.0;
+	    }
+	    60% {
+		opacity:0;
+	    }
+	    70% {
+		opacity:1.0;
+	    }
+	    80% {
+		opacity:0;
+	    }
+	    90% {
+		opacity:1.0;
+	    }
+	    100% {
+		opacity:1.0;
+	    }
+	}
+	    
+	
+	/* ***** */
+	
 	
 	#topbar {padding: 10px 5px;}
 	#runbar {padding: 10px 5px;}
@@ -139,6 +198,7 @@
 		var globalscan;
 		var globalscanlist;
 		var globalbeamline = 'None';
+		var currentRow = 0;
 		
 		
 		
@@ -197,6 +257,20 @@
 		socket.on('shares', function(shares){
 			$("#shared-list").html('');
 			shares.forEach(function(s) { $("#shared-list").html($("#shared-list").html() + '<li class="ui-widget-content">'+s+'</li>')});
+		});
+		
+		socket.on('scanprogress', function(progress){
+			currentRow = progress['CPT'][0] + (progress['TopLevel']>1)*progress['CPT'][1]*progress['NPTS'][0] + (progress['TopLevel']>2)*progress['CPT'][2]*progress['NPTS'][1];
+			if (currentRow==0){
+				expandedGrid.invalidateAllRows();
+			} else {
+				expandedGrid.invalidateRows([currentRow,currentRow+1])
+			}
+			expandedGrid.render();
+		});
+		
+		socket.on('scanstop', function(progress){
+			$( "#scanfinished-popup" ).dialog( "open" );
 		});
 		
 		socket.on('scandata', function(epn,scan,data){
@@ -288,6 +362,7 @@
 		}
 		
 		var selectorLists = {Type: ['Linear','Exponential','Table'], "Abs/Rel": ['Absolute','Relative'], Positioner: Object.keys(positionerStruct)};
+		
 		
 		function AutoCompleteEditor(args) {
 			var $input;
@@ -445,6 +520,14 @@
 			var tableData = [];
 			var filenames = [];
 			
+			if (globalbeamline == 'SAXSTEST') {
+				PVStruct = positionerTestStruct;
+				console.log('SAXSTEST');
+			} else
+			{
+				PVStruct = positionerStruct;
+			}
+			
 			for (var loop = 0; loop <=3; ++loop) {
 				var filenamesTemp = [];
 				for (var row=0; row < posData[loop].length; row++) {
@@ -454,7 +537,7 @@
 				
 				for (posIndex = 1; posIndex <= 3; ++posIndex) {
 					positionerTemp = (fillData[loop])[0]['position'+String(posIndex)]
-					positioner.push({Name: positionerTemp, PV: positionerStruct[positionerTemp]});
+					positioner.push({Name: positionerTemp, PV: PVStruct[positionerTemp]});
 					type.push((fillData[loop])[1]['position'+String(posIndex)]);
 					relative.push((fillData[loop])[2]['position'+String(posIndex)]);
 					start.push((fillData[loop])[3]['position'+String(posIndex)]);
@@ -733,7 +816,7 @@
 				
 			});
 			$("#run").button().click(function(){
-				if (globalbeamline == 'SAXS'){
+				if (globalbeamline == 'SAXS' || globalbeamline == 'SAXSTEST'){
 					if (saveScan() != -1) {
 						socket.emit("run",globalepn, globalscan);
 					}
@@ -742,7 +825,7 @@
 				}
 			});
 			$("#initialise").button().click(function(){
-				if (globalbeamline == 'SAXS' || globalbeamline == 'MUDIES'){
+				if (globalbeamline == 'SAXS' || globalbeamline == 'SAXSTEST'){
   					if (saveScan() != -1) {
 						socket.emit("initialise",globalepn, globalscan);
 					}
@@ -751,7 +834,7 @@
 				}
 			});
 			$("#stop").button().click(function(){
-				if (globalbeamline == 'SAXS'){
+				if (globalbeamline == 'SAXS' || globalbeamline == 'SAXSTEST'){
 					socket.emit("stop");
 				} else {
 					alert('Not at beamline. Function disabled');
@@ -865,8 +948,12 @@
 		}
 		
 		function formatExpandedColumns(row) {
+			
 			if (row >= expandedData.length) {
 				return {};
+			}
+			if (row==currentRow+1) {
+				return {"cssClasses": "Expanded Current"};
 			}
 			if (expandedData[row].colNum == "D") {
 				return {"cssClasses": "Delay"};
@@ -963,7 +1050,7 @@
 				
 				tempFillGrid.onBeforeEditCell.subscribe(function(e,args){
 					data = args.grid.getData();
-					if (args.row > 1 && args.row < 6){
+					if (args.row > 2 && args.row < 6){
 						if (data[1][args.column.id] == "Table"){
 							return false;
 						};
@@ -1056,6 +1143,17 @@
 						"Exit": function(){
 							$(this).dialog("close");
 						}
+					}
+				});
+				$( "#scanfinished-popup" ).dialog({
+					dialogClass:"scanfinished",
+					autoOpen: false,
+					modal: true,
+					hide: 'puff',
+					open: function(event, ui) {
+						setTimeout(function(){
+							$('#scanfinished-popup').dialog('close');                
+						}, 2000);
 					}
 				});
 			});
@@ -1178,6 +1276,31 @@
 					(expandedGrid[loop]).updateRowCount();
 					(expandedGrid[loop]).render();
 			});
+			expandedGrid.onDblClick.subscribe(function(e, args) {
+				var cell = args.cell;
+				var row = args.row;
+				
+				if (cell==0) {
+					if (globalbeamline == 'SAXSTEST') {
+						PVStruct = positionerTestStruct;
+					} else
+					{
+						PVStruct = positionerStruct;
+					}
+					
+					positioners = [];
+					positions = [];
+					for (i=1;i<13;i++) {
+						positioner = expandedData[0]['position'+i.toString()]
+						if (typeof(positioner) == 'undefined') {
+							continue
+						}
+						positioners.push(PVStruct[positioner]);
+						positions.push(expandedData[row]['position'+i.toString()]);
+					};
+					socket.emit('runsinglepoint', {positioner:positioners, position:positions}, name=expandedData[row]['name'])
+				};
+			});
 		});
 		
 	</script>
@@ -1247,6 +1370,7 @@
 			<button id="initialise" class="initialise-button" title="Setup beamline for a scan without executing.">Initialise Scan</button>
 			<button id="stop" class="stop-button">Stop Scan</button>
 		</div>
+		<p>Double-Click row number to run single point.</p>
 		
 		<div id="expandedGrid" style="width:1350px;height:800px;clear:both;"></div>
 		
@@ -1257,6 +1381,10 @@
 	<ol id="shared-list">
 	</ol>
 	<label for="share-email">Email: </label><input id="share-email">
+</div>
+
+<div id="scanfinished-popup" style="background: #DB5755;">
+	<H9 style="margin-left: 20px;margin-top: 30px">Scan Finished</H9>
 </div>
 
 </div>

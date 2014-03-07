@@ -10,7 +10,9 @@ indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
 IOCPV = 'SMTEST:'
 triggerPV = '13PIL1:cam1:Acquire'
-triggerPV = ''
+triggerPV = 'SMTEST:cam1:Acquire'
+filenamePV = '13PIL1:cam1:FileName'
+filenamePV = 'SMTEST:cam1:FileName'
 
 def xstr(s):
     if s is None:
@@ -39,6 +41,45 @@ class GenericScanNamespace(BaseNamespace):
         redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
         redisdb = int(redisdb)
         self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+    
+        self.scanCPT = [0,0,0]
+        self.scanNPTS = [0,0,0]
+        self.scanflag = 0
+        
+        scan1PtPV = PV('%sscan%d.CPT' % (IOCPV,1),callback=self.scanupdate)
+        scan2PtPV = PV('%sscan%d.CPT' % (IOCPV,2),callback=self.scanupdate)
+        scan3PtPV = PV('%sscan%d.CPT' % (IOCPV,3),callback=self.scanupdate)
+        
+        scan1NPtPV = PV('%sscan%d.NPTS' % (IOCPV,1),callback=self.scanupdate)
+        scan2NPtPV = PV('%sscan%d.NPTS' % (IOCPV,2),callback=self.scanupdate)
+        scan3NPtPV = PV('%sscan%d.NPTS' % (IOCPV,3),callback=self.scanupdate)
+        
+        scanRunning = PV('%sscanActive' % (IOCPV,), callback=self.scanupdate)
+        
+             
+    def scanupdate(self, pvname=None, value=None, **kwargs):
+        
+        if pvname=='%sscanActive' % (IOCPV,):
+            if value == 0:
+                if self.scanflag >= 1:
+                    self.emit('scanstop')
+                self.scanflag = 0
+            return
+        
+        pvsplit = pvname.rsplit('.',1)
+        pvtype = pvsplit[1]
+        scanlevel = int(pvsplit[0][-1:])
+        
+        if pvtype == 'CPT':
+            self.scanCPT[scanlevel-1] = value
+            if scanlevel > 1:
+                for index in range(scanlevel-1):
+                    self.scanCPT[index] = 0
+                
+        else :
+            self.scanNPTS[scanlevel-1] = value
+            
+        self.emit('scanprogress', {'CPT': self.scanCPT, 'NPTS': self.scanNPTS, 'TopLevel': self.scanflag})
     
     
     def on_connect(self):
@@ -103,6 +144,14 @@ class GenericScanNamespace(BaseNamespace):
         shares = self.redis.smembers('generic:' + epn + ':scan:' + scan + ':shares')
         self.emit('shares', list(shares))
 
+    def on_runsinglepoint(self, positionStruct, name = ''):
+        result = 0
+        for index,positioner in enumerate(positionStruct['positioner']):
+            result += caput(positioner, positionStruct['position'][index], wait = True)
+        if (name != ''):
+            result += caput(filenamePV, name)
+        result += caput(triggerPV, 1)
+
     def sendlist(self):
         epnscans = []
         beamlinescans = []
@@ -133,7 +182,6 @@ class GenericScanNamespace(BaseNamespace):
         
         self.emit('loadlist',epnscansdict,beamlinescansdict)
     
-
     def initialise(self,epn,scan,type='all'):
         
         #Load scan data from redis
@@ -213,12 +261,12 @@ class GenericScanNamespace(BaseNamespace):
                 print data['positioners']
                 
                 try:
-	            start =float(data['start'][absPos])
+                    start =float(data['start'][absPos])
                 except:
                     pass
 
                 try:
-	            end = float(data['end'][absPos])
+                    end = float(data['end'][absPos])
                 except:
                     pass
 
@@ -231,7 +279,7 @@ class GenericScanNamespace(BaseNamespace):
                 if scantype == 'Linear':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
                     result += caput(scanPV+'P'+str(1+posNum)+'SP', start)
-		    result += caput(scanPV+'P'+str(1+posNum)+'EP',end)
+                    result += caput(scanPV+'P'+str(1+posNum)+'EP',end)
                 
                 elif scantype == 'Exponential' :
                     prefactor = (end-start)/((number-1)*(step**(number-1)));
@@ -261,13 +309,23 @@ class GenericScanNamespace(BaseNamespace):
         return level
         
     def run(self, level):
-        scanning = caput('%sscan%d.EXSC' % (IOCPV,level), 1)
+        self.scanflag = level
+        scanning = caput('%sscan%d.EXSC' % (IOCPV,level),1)
+        if scanning != 1:
+            self.scanflag = 0
+        
 
     def on_initialise(self,epn,scan):
         self.initialise(epn,scan)
     
     def on_run(self,epn,scan):
         self.run(self.initialise(epn, scan))
+
+    def on_stop(self):
+        caput('%sAbortScans.PROC' % (IOCPV,), [1])
+        caput('%sAbortScans.PROC' % (IOCPV,), [1])
+        caput('%sAbortScans.PROC' % (IOCPV,), [1])
+    
 
     def recv_message(self, message):
         print "PING!!!", message
