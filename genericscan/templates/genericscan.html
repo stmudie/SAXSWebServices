@@ -105,7 +105,8 @@
 		display: none;
 	}
 	
-	.ui-widget-overlay {
+	/* Flashing overlay for limit and end of scan messages*/
+	.ui-widget-overlay.flash {
 		background: black;
 		opacity: 0.7;
 		-webkit-animation-name: flashbackground;
@@ -254,17 +255,35 @@
 			$( "#scanname" ).catcomplete( "option", "source", globalscanlist);
 		});
 		
+		socket.on('limitmessage', function(safe,messages){
+			if (!safe) {
+				message = ''
+				messages.forEach(function(mess,index){
+					message += "Scan Level " + index.toString() + ' : ' + mess + '\n'
+				});
+				$( "#limit-message").html(message);
+				$( "#limit-error-popup" ).dialog( "open" );
+				//alert(message);
+			}
+		});
+		
+		
 		socket.on('shares', function(shares){
 			$("#shared-list").html('');
 			shares.forEach(function(s) { $("#shared-list").html($("#shared-list").html() + '<li class="ui-widget-content">'+s+'</li>')});
 		});
 		
 		socket.on('scanprogress', function(progress){
+			if (expandedData.length == 1){return};
+				
 			currentRow = progress['CPT'][0] + (progress['TopLevel']>1)*progress['CPT'][1]*progress['NPTS'][0] + (progress['TopLevel']>2)*progress['CPT'][2]*progress['NPTS'][1];
+						
+			for (i=0;i<=currentRow+1;i++){ if (expandedData[i].colNum == 'D'){currentRow+=1}};
+			
 			if (currentRow==0){
 				expandedGrid.invalidateAllRows();
 			} else {
-				expandedGrid.invalidateRows([currentRow,currentRow+1])
+				expandedGrid.invalidateRows([currentRow-1,currentRow,currentRow+1])
 			}
 			expandedGrid.render();
 		});
@@ -1127,6 +1146,13 @@
 			};
 			
 			$(function() {
+				$( "#limit-error-popup" ).dialog({
+					autoOpen: false,
+					modal: true,
+					open: function(event,ui){
+						$('.ui-widget-overlay').addClass('flash');
+					}
+				});
 				$( "#share-popup" ).dialog({
 					autoOpen: false,
 					modal: true,
@@ -1143,6 +1169,9 @@
 						"Exit": function(){
 							$(this).dialog("close");
 						}
+					},
+					open: function(event,ui){
+						$('.ui-widget-overlay').removeClass('flash');
 					}
 				});
 				$( "#scanfinished-popup" ).dialog({
@@ -1151,6 +1180,8 @@
 					modal: true,
 					hide: 'puff',
 					open: function(event, ui) {
+						$('.ui-widget-overlay').addClass('flash');
+
 						setTimeout(function(){
 							$('#scanfinished-popup').dialog('close');                
 						}, 2000);
@@ -1377,6 +1408,11 @@
 	</div>
 </div>
 
+<div id="limit-error-popup" style="background-color: #B160E0;">
+	<H7>Limit Error</H7>
+	<div id="limit-message"></div>
+</div>
+
 <div id="share-popup">
 	<ol id="shared-list">
 	</ol>
@@ -1386,6 +1422,7 @@
 <div id="scanfinished-popup" style="background: #DB5755;">
 	<H9 style="margin-left: 20px;margin-top: 30px">Scan Finished</H9>
 </div>
+
 
 </div>
 
