@@ -20,7 +20,7 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 app.register_blueprint(secprofileslocal_app, url_prefix='/secprofiles')
 
-attributes = { 'epn' : ['local'],'REDIS' : app.config['REDIS']}
+attributes = { 'epn' : ['local'],'REDIS' : app.config['REDIS'],'GENERAL' : app.config['GENERAL']}
 
 @app.route("/socket.io/<path:path>")
 def run_socketio(path):
