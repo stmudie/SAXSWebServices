@@ -1,18 +1,18 @@
 from socketio.namespace import BaseNamespace
-from epics import PV, caput
+from epics import PV, caput, caget
 import cPickle as pickle
 import redis
 import time
 
 # Base PVS
 indexPV = "13INDEXARRAY:array"
-#indexPV = "SMTESTINDEX:array"
+indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
-#IOCPV = 'SMTEST:'
+IOCPV = 'SMTEST:'
 triggerPV = '13PIL1:cam1:Acquire'
-#triggerPV = 'SMTEST:cam1:Acquire'
+triggerPV = 'SMTEST:cam1:Acquire'
 filenamePV = '13PIL1:cam1:FileName'
-#filenamePV = 'SMTEST:cam1:FileName'
+filenamePV = 'SMTEST:cam1:FileName'
 
 
 def xstr(s):
@@ -42,10 +42,15 @@ class GenericScanNamespace(BaseNamespace):
         redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
         redisdb = int(redisdb)
         self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        AVServerIP, AVServerdb = self.request['REDIS']['SOUNDVISIONSERVER'].split(':')
+        AVServerdb = int(AVServerdb)
+        self.AVServer = redis.StrictRedis(host=AVServerIP, port=6379, db=AVServerdb)
     
         self.scanCPT = [0,0,0]
         self.scanNPTS = [0,0,0]
         self.scanflag = 0
+        
+        self.scanstarttime = time.time()
         
         scan1PtPV = PV('%sscan%d.CPT' % (IOCPV,1),callback=self.scanupdate)
         scan2PtPV = PV('%sscan%d.CPT' % (IOCPV,2),callback=self.scanupdate)
@@ -60,11 +65,19 @@ class GenericScanNamespace(BaseNamespace):
              
     def scanupdate(self, pvname=None, value=None, **kwargs):
         
+        elapsedtime = time.time()-self.scanstarttime
+        
         if pvname=='%sscanActive' % (IOCPV,):
             if value == 0:
                 if self.scanflag >= 1:
                     self.emit('scanstop')
+                    if  elapsedtime > 30 :
+                        self.AVServer.lpush('soundvision:queue','Scan Done#WindowsExclamation2.wav')
+                    #elif time.time()-self.scanstarttime > 180:
+                    #    self.AVServer.lpush('soundvision:queue','@animal.mp4')
+                
                 self.scanflag = 0
+                self.playing = 0
             return
         
         pvsplit = pvname.rsplit('.',1)
@@ -82,6 +95,14 @@ class GenericScanNamespace(BaseNamespace):
             
         self.emit('scanprogress', {'CPT': self.scanCPT, 'NPTS': self.scanNPTS, 'TopLevel': self.scanflag})
     
+        if self.scanflag > 0 and self.playing != 1:
+            currentPos = self.scanCPT[0] + (self.scanflag>1)*self.scanCPT[1]*self.scanNPTS[0] + (self.scanflag>2)*self.scanCPT[2]*self.scanNPTS[1]
+            totalPos = (self.scanflag==1)*self.scanNPTS[0] + (self.scanflag==2)*self.scanNPTS[1]*self.scanNPTS[0] + (self.scanflag==3)*self.scanNPTS[2]*self.scanNPTS[1]*self.scanNPTS[0]
+            timeremain = (totalPos/(float(currentPos)+0.1)-1)*(elapsedtime)
+            if timeremain < 40 and elapsedtime + timeremain > 180:
+                self.AVServer.lpush('soundvision:queue','@animal.mp4')
+                self.playing = 1
+            
     
     def on_connect(self):
         print 'connect'
@@ -183,6 +204,7 @@ class GenericScanNamespace(BaseNamespace):
         
         self.emit('loadlist',epnscansdict,beamlinescansdict)
     
+    
     def initialise(self,epn,scan,type='all'):
         
         #Load scan data from redis
@@ -200,7 +222,7 @@ class GenericScanNamespace(BaseNamespace):
         num2 = int(data['number'][1] or 1)
         num1 = int(data['number'][0] or 1)
  
-	print data['filenames']
+        print data['filenames']
 
         for pos4 in range(num4):
             for pos3 in range(num3):
@@ -209,10 +231,10 @@ class GenericScanNamespace(BaseNamespace):
                         #position = pos1 + pos2*posData[0].length + pos3*posData[1].length*posData[0].length
                        
                         fragment = []
-			fragment.append(xstr(data['filenames'][0][pos1]))
-			fragment.append(xstr(data['filenames'][1][pos2]))
-			fragment.append(xstr(data['filenames'][2][pos3]))
-			fragment.append(xstr(data['filenames'][3][pos4]))
+                        fragment.append(xstr(data['filenames'][0][pos1]))
+                        fragment.append(xstr(data['filenames'][1][pos2]))
+                        fragment.append(xstr(data['filenames'][2][pos3]))
+                        fragment.append(xstr(data['filenames'][3][pos4]))
 
 			filenames.append(fragment[data['nameorder'][0]-1] + fragment[data['nameorder'][1]-1] + fragment[data['nameorder'][2]-1] + fragment[data['nameorder'][3]-1])
 #                        filenames.append(xstr(data['filenames'][(data['nameorder'][0]-1)][pos1]) + xstr(data['filenames'][(data['nameorder'][1]-1)][pos2]) + xstr(data['filenames'][(data['nameorder'][2]-1)][pos3]) + xstr(data['filenames'][(data['nameorder'][3]-1)][pos4]))
@@ -322,19 +344,37 @@ class GenericScanNamespace(BaseNamespace):
                         level = 4
     
         return level
+
+    def checklimits(self, level):
+        time.sleep(0.5) # Make sure scan full initialised, if coming direct from initialise code.
+        result = 0
+        safe = True
+        limitmessages = []
+        for l in range(1,level+1):
+            result += caput('%sscan%d.CMND' % (IOCPV,l),1,wait = True)
+            limitmessages.append(caget('%sscan%d.SMSG' % (IOCPV,l)))
+            if limitmessages[-1] != 'SCAN Values within limits':
+                safe = False
+                                   
+        print limitmessages
+        self.emit('limitmessage', safe, limitmessages)
+        return safe
         
     def run(self, level):
         self.scanflag = level
+        self.scanstarttime = time.time()
+        self.playing = 0
         scanning = caput('%sscan%d.EXSC' % (IOCPV,level),1)
         if scanning != 1:
             self.scanflag = 0
-        
 
     def on_initialise(self,epn,scan):
-        self.initialise(epn,scan)
-    
+        self.checklimits(self.initialise(epn,scan))
+            
     def on_run(self,epn,scan):
-        self.run(self.initialise(epn, scan))
+        level = self.initialise(epn, scan)
+        if self.checklimits(level):
+            self.run(level)
 
     def on_stop(self):
         caput('%sAbortScans.PROC' % (IOCPV,), [1])
