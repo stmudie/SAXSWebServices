@@ -10,3 +10,4 @@
 localconfig.py
 # virtualenv
 env/
+SlickGrid/
