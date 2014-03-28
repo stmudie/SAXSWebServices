@@ -54,7 +54,7 @@ def run_socketio(path):
     
     print beamline.current
     
-    attributes = { 'epn' : [user], 'REDIS' : app.config['REDIS'], 'beamline' : beamline.current}
+    attributes = { 'epn' : [user], 'REDIS' : app.config['REDIS'], 'GENERAL' : app.config['GENERAL'],'beamline' : beamline.current}
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/mdaplotter':MDAPlotterNamespace}, attributes)
     socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace}, attributes)
     return ''

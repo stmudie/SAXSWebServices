@@ -19,8 +19,8 @@ class SECProfilesNamespace(BaseNamespace):
         self.saveFilename = ''
         self.epn = ''
         self.exp = ''
-        #self.pipeurl = 'https://aswebsaxs.synchrotron.org.au/runpipeline'
-        self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
+        self.pipeurl = 'https://aswebsaxs.synchrotron.org.au/runpipeline'
+        #self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
         
         redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
         if redisIP == 'No Redis':
@@ -216,7 +216,7 @@ class SECProfilesNamespace(BaseNamespace):
 
         for n in name:
             try:
-                array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0]
+                array =[(element[0],element[namedict[n]]) for element in data['profiles'] if element[namedict['Quality']] >= 0 and element[namedict['Rg_Array']] <=500]
                 self.emit(n, {'filename': self.activeFile, 'epn': self.epn, 'exp':self.exp, 'profile':array})
             except IndexError:
                 pass

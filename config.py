@@ -1,6 +1,10 @@
 SECRET_KEY = 'PAWR#$asd%EH'
 DEBUG = True
 
+GENERAL = {
+    "SUFFIXLENGTH":4
+}
+
 BEAMLINE_NETWORKS = {
     "MUDIES":"10.6.0.143",
     "SAXS":"10.138.0.0/16",
