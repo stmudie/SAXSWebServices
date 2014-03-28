@@ -182,13 +182,15 @@ class SECProfilesNamespace(BaseNamespace):
     
     def on_SendPipeline(self):
         print 'SendPipeline'
-        rawfilename = splitext(self.activeFile)[0]
-        rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
+        rawfilename = splitext(self.saveFilename)[0]
+        #rawfilename = splitext(self.activeFile)[0]
+        #rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
         if len(self.avSampleDat) == 1:
-            urllib2.urlopen('{0}/{1}/{2}/manual/{3}.dat'.format(self.pipeurl,self.epn,self.exp,self.saveFilename))
+            print '{0}/{1}/{2}/manual/{3}.dat'.format(self.pipeurl,self.epn,self.exp,rawfilename)
+            urllib2.urlopen('{0}/{1}/{2}/manual/{3}.dat'.format(self.pipeurl,self.epn,self.exp,rawfilename))
         else:
             for num,saveDat in enumerate(self.avSampleDat):
-                urllib2.urlopen('{0}/{1}/{2}/manual/{3}-{4}.dat'.format(self.pipeurl,self.epn,self.exp,self.saveFilename,num))
+                urllib2.urlopen('{0}/{1}/{2}/manual/{3}-{4}.dat'.format(self.pipeurl,self.epn,self.exp,rawfilename,num))
     
     
     def sendProfile(self, name, filter_on_quality = 0):
