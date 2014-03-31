@@ -19,8 +19,8 @@ class SECProfilesNamespace(BaseNamespace):
         self.saveFilename = ''
         self.epn = ''
         self.exp = ''
-        self.pipeurl = 'https://aswebsaxs.synchrotron.org.au/runpipeline'
-        #self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
+        #self.pipeurl = 'https://aswebsaxs.synchrotron.org.au/runpipeline'
+        self.pipeurl = 'http://127.0.0.1:8082/runpipeline'
         
         redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
         if redisIP == 'No Redis':
@@ -113,7 +113,7 @@ class SECProfilesNamespace(BaseNamespace):
         else :
             if data['bufferrange'][0] == -1 and data['bufferrange'][1] == -1:
                     try:
-                        sampleDat = DatFile('{0}_{1}.dat'.format(filename,str(profileNumber).zfill(self.suflen)))
+                        sampleDat = DatFile('{0}/sub/{1}_{2}.dat'.format(dirname(dirname(filename)),basename(filename),str(profileNumber).zfill(self.suflen)))
                     except Exception:
                         self.emit('ErrorMessage',{'title': "Error", 'message': "Error opening {0}_{1}.dat.".format(filename,str(profileNumber).zfill(self.suflen))})
                         return
@@ -166,8 +166,7 @@ class SECProfilesNamespace(BaseNamespace):
         
     
     def on_SaveAverage(self, filename, indexrange):
-        print 'save'
-        print filename
+
         self.saveFilename = filename
         rawfilename = splitext(self.activeFile)[0]
         rawfilename = (join(dirname(rawfilename),basename(rawfilename).rsplit('_',2)[0]) if self.redis == 'No Redis' else rawfilename)
