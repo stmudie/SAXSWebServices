@@ -3,11 +3,11 @@ from time import sleep, time
 import cPickle as pickle
 import redis
 import numpy as np
-from scipy.optimize import minimize
 from math import log10, floor
+from epics import caput
 
 def round_to_n(x,n):
-    return round(x, -int(floor(log10(x))) + (n - 1))
+    return round(x, -int(floor(log10(abs(x)))) + (n - 1))
 
 
 class CatcherNamespace(BaseNamespace):
@@ -41,7 +41,12 @@ class CatcherNamespace(BaseNamespace):
                 
         
     def sendProfile(self,replot=False):
-        pos1 = pickle.loads(self.redis.get('scantoredis:pos1'))
+        pos1Struct = pickle.loads(self.redis.get('scantoredis:pos1'))
+        pos1temp = pos1Struct['Array']
+        pos1 = []
+        for p in pos1temp:
+            pos1.append(round_to_n(p,5))
+
         activeDet = pickle.loads(self.redis.get('scantoredis:detActive'))
         for i,active in enumerate(activeDet, start = 1):
             if active != '':
@@ -53,10 +58,14 @@ class CatcherNamespace(BaseNamespace):
                 except:
                     minimum = [0,0]
                     maximum = [0,0]
-                    
                 statistics = {'max': maximum, 'min': minimum}
                 self.emit('raw_dat', {'detNum':i,'detPV': active, 'profile':profile, 'replot' : replot if self.scaletype == 'absolute' else True, 'statistics' : statistics})
     
+    def initPlot(self):
+        self.emit('clear')
+        self.emit('scanner')
+        pos1Struct = pickle.loads(self.redis.get('scantoredis:pos1'))
+        self.emit('positioner',pos1Struct['PV'], pos1Struct['EGU'])
     
     def checkForNewRedisProfile(self):
         self.sub = self.redis.pubsub()
@@ -64,9 +73,18 @@ class CatcherNamespace(BaseNamespace):
         print 'listening'
         for message in self.sub.listen():
             if message['data'] == 'NewScan':
-                self.emit('clear')
+                self.initPlot()
             elif message['data'] == 'NewPoint':
                 self.sendProfile()
+
+    def on_change_scanner(self, scanner):
+        self.redis.set('scantoredis:scanner',scanner)
+        self.redis.publish('scantoredis:pub:scannerchange',1)
+    
+    def on_move(self,pos):
+        print 'move'
+        pos1Struct = pickle.loads(self.redis.get('scantoredis:pos1'))
+        caput(pos1Struct['PV'],pos)
 
     def on_scale(self,type):
         self.scaletype = type
@@ -74,6 +92,7 @@ class CatcherNamespace(BaseNamespace):
     
     def recv_connect(self):
         print 'connected here'
+        self.initPlot()
         self.sendProfile()
         g = self.spawn(self.checkForNewRedisProfile)
         

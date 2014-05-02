@@ -1,0 +1,295 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>The Uber Catcher</title>
+
+		<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
+		<script type="text/javascript" src="{{ url_for('catcher2.static', filename='socket.io.js')}}"></script>
+		<link rel="stylesheet" href="{{ url_for('catcher2.static', filename='jquery/ui/css/jquery.ui.all.css')}}">
+		<script src="{{ url_for('catcher2.static', filename='jquery/jquery-1.8.2.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery-ui.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.core.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.widget.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.mouse.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.button.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.sortable.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.tabs.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='jquery/ui/jquery.ui.autocomplete.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='verticalCheckPlugin.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='highcharts/highcharts.js')}}"></script>
+		<script src="{{ url_for('catcher2.static', filename='highcharts/modules/exporting.js')}}"></script>
+		
+		<!-- scanner definitions -->
+		<script src="{{ url_for('catcher2.static', filename='scanners.js')}}"></script>
+<style>
+.ui-autocomplete {
+		max-height:900px;
+                overflow-y:auto;
+                overflow-x:hidden;
+}
+.topbar {padding: 10px 5px;}
+</style>
+<script type="text/javascript">
+			
+WEB_SOCKET_SWF_LOCATION = "{{ url_for('catcher2.static', filename='WebSocketMain.swf')}}";
+WEB_SOCKET_DEBUG = true;
+
+var raw_dat_data = new Array(70);
+for (var i = raw_dat_data.length-1; i >=0; --i) raw_dat_data[i]= {'plotNum':-1,'profile':[0]};
+
+var defaultChartSettings = {
+            chart: {
+                renderTo: 'dummy',
+                type: 'scatter',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Scan Detector Data'
+            },
+            xAxis: {
+                title: {
+                    enabled: true,
+                },
+                type: 'linear',
+		gridLineWidth: 1,
+		//tickInterval: 0.1,
+		//minorTickInterval: 0.1,
+		startOnTick: false,
+                endOnTick: false,
+                showLastLabel: true
+            },
+            yAxis: {
+                title: {
+                    text: 'Whatever'
+                },
+		gridLineWidth: 1,
+		//tickInterval: 0.001,
+		type: 'linear',
+		startOnTick: false,
+		endOnTick: false,
+            },
+            legend : {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'top',
+		floating: true,
+		y : 30
+	    },
+	    plotOptions: {
+                scatter: {
+                    lineWidth : 2,
+		    marker: {
+                        radius: 2,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                lineColor: 'rgb(100,100,100)'
+                            }
+                        }
+                    }, 
+                    states: {
+                        hover: {
+                            marker: {
+                                enabled: false
+                            }
+                        }
+                    },
+                    events: {
+                        click: function(event) {
+                            if (event.ctrlKey) {
+                                socket.emit('move',event.point.x)
+                            }   
+                        }
+                    }
+                }
+            }
+        };
+
+rawDatSettings = $.extend(deep=true,{},defaultChartSettings);
+	
+
+// socket.io specific code
+var socket = io.connect('/catcher');
+
+socket.on('connect', function () {
+});
+
+socket.on('error', function (e) {
+    message('System', e ? e : 'A unknown error occurred');
+});
+
+socket.on('clear',function() {
+        $('#statistics').html('');
+	raw_dat_chart.destroy();
+	for (var i = raw_dat_data.length-1; i >=0; --i) raw_dat_data[i]= {'plotNum':-1,'profile':[0]};
+	raw_dat_chart = new Highcharts.Chart(rawDatSettings);
+});
+
+socket.on('scanner',function(scanner){
+	raw_dat_chart.setTitle(null,{ text: scanner})
+});
+
+socket.on('positioner',function(PV,EGU){
+	raw_dat_chart.xAxis[0].setTitle({text: PV + ' (' + EGU + ')'});
+});
+socket.on('raw_dat', function(data) {
+	if (raw_dat_chart.series.length == 0) {
+	        raw_dat_chart.addSeries({name: data.detPV, data : data.profile});
+		plotNum = 0;
+		addStatsBlock(data.detPV, plotNum);
+	} else {
+		plotNum = raw_dat_data[data.detNum-1].plotNum
+		if (plotNum == -1) {
+			raw_dat_chart.addSeries({name: data.detPV, data : data.profile});
+			plotNum = raw_dat_chart.series.length-1;
+			addStatsBlock(data.detPV, plotNum);
+		} else {
+			if (data.replot == true) {
+                                raw_dat_chart.series[plotNum].setData(data.profile, false);
+			} else {
+				for (i=raw_dat_chart.series[plotNum].data.length; i < data.profile.length; i++){
+					raw_dat_chart.series[plotNum].addPoint(data.profile[i],false);
+				}
+			}
+			raw_dat_chart.redraw()
+		}
+	}
+
+	raw_dat_data[data.detNum-1] = {'plotNum':plotNum,'profile':data.profile};
+	
+	$('#mindet'+plotNum).html('Min Location:' + data.statistics.min[0]);
+	$('#maxdet'+plotNum).html('Max Location:' + data.statistics.max[0]);
+	//raw_dat_chart.setTitle({text: data.filename});
+});
+
+function addStatsBlock(name,number) {
+	$('#statistics').append('<div>'+name+'</div><div id="maxdet'+number+'"></div><div id="mindet'+number+'"></div>');
+}
+
+function setLinLogAxis(chart, axis){
+	switch (axis)
+	{
+		case 'linx':
+			chart.xAxis[0].update({ type: 'linear'})
+			//settings.xAxis.type = 'linear';
+			break;
+		case 'logx':
+			chart.xAxis[0].update({ type: 'logarithmic'})
+			//settings.xAxis.type = 'logarithmic';
+			break;
+		case 'liny':
+			chart.yAxis[0].update({ type: 'linear'})
+			//settings.yAxis.type = 'linear';
+			break;
+		case 'logy':
+			chart.yAxis[0].update({ type: 'logarithmic'})
+			//settings.yAxis.type = 'logarithmic';
+			break;
+	};
+	
+};
+
+function setLinLog(chart, axis){
+	switch(chart)
+	{
+		case "raw_dat":
+			setLinLogAxis(raw_dat_chart, axis);
+			break;
+	};
+	
+};
+
+$(function () {
+
+	$(document).ready(function() {
+
+	$('#scanner').autocomplete({
+		minLength:0,
+		source: Object.keys(scannerStruct)
+		})
+		.focus(function(){$(this).autocomplete('search', "")});
+	
+	
+	$('#scanner').on( "autocompletechange", function( event, ui ) {
+		if (Object.keys(scannerStruct).indexOf(this.value)==-1){
+			alert('Invalid Scanner');
+		} else {
+			socket.emit('change_scanner', scannerStruct[this.value]);
+		}
+	}) ;
+		
+	$( "#raw_dat_choice_y" ).buttonset();
+	$( "#raw_dat_choice_x" ).buttonset();
+	
+	$( ".linlog")
+		.button()
+		.click(function() {
+				lastUnderscore = (event.target.id).lastIndexOf('_')
+				chartName = (event.target.id).substring(0,lastUnderscore);
+				axis = (event.target.id).substring(lastUnderscore+1,lastUnderscore+5);
+				setLinLog(chartName,axis);
+			});
+		
+	//$( "#tabs" ).tabs({collapsible: true}).find( ".ui-tabs-nav" ).sortable({ axis: "x" });
+	$( "#fractional").click(function(){ socket.emit('scale','fractional') });
+	$( "#absolute").click(function(){ socket.emit('scale','absolute') });
+	$( "#normalised").click(function(){ socket.emit('scale','normalised') });
+	
+	rawDatSettings.chart.renderTo = 'raw_dat_div';
+	raw_dat_chart = new Highcharts.Chart(rawDatSettings);
+	
+    });
+    
+});
+</script>
+</head>
+<body>
+
+<!--<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1">Catcher</a></li>
+	</ul>
+	<div id="tabs-1">
+-->
+		<div>
+			<div style="margin: 10px 0px;">
+				<span id="topbar1" class="ui-widget-header ui-corner-all topbar">
+					<label for="scanname">Scanner</label>
+					<input id="scanner"></input>
+				</span>
+				<span id="topbar2" class="ui-widget-header ui-corner-all topbar">
+					X-Axis
+                                        <span id="raw_dat_choice_x" style="font-size: small;">
+					        <input type="radio" id="raw_dat_logx" class="linlog" name="radiox" /><label for="raw_dat_logx">Log</label>
+					        <input type="radio" id="raw_dat_linx" class="linlog" name="radiox" checked="checked"/><label for="raw_dat_linx">Linear</label>
+        				</span>
+					Y-Axis
+        				<span id="raw_dat_choice_y" style="font-size: small;">
+						<input type="radio" id="raw_dat_logy" class="linlog" name="radioy" /><label for="raw_dat_logy">Log</label>
+						<input type="radio" id="raw_dat_liny" class="linlog" name="radioy" checked="checked"/><label for="raw_dat_liny">Linear</label>
+					</span>
+					<button id="absolute">Absolute</button>
+					<button id="fractional">Fractional</button>
+					<button id="normalised">Normalised</button>
+				</span>
+				
+			</div>
+                        <div id='statistics' style="width: 150px; float: left; margin-left: 50px; font-size: small;"></div>
+			<div style="float: left">
+				<div id="raw_dat_div" style="width: 1200px; height: 600px; margin: 0 auto"></div>
+			</div>
+			<div style="clear: both"></div>
+		</div>
+		<div style="width: 400px; margin-left: auto; margin-right: auto">
+			<form>
+				
+			</form>
+		</div>
+<!--	</div>
+</div>
+-->
+
+
+</body>
+</html>

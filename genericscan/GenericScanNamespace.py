@@ -260,11 +260,24 @@ class GenericScanNamespace(BaseNamespace):
             result += caput(scanPV+'PDLY',0)
             
             #Detector Triggers
-            if loop == 1 :
-                result += caput(scanPV+'T1PV',triggerPV)
-            else :
-                result += caput(scanPV+'T1PV','%sscan%d.EXSC' % (IOCPV,loop-1))
+            #if loop == 1 :
+            #    result += caput(scanPV+'T1PV',triggerPV)
+            #else :
+            #    result += caput(scanPV+'T1PV','%sscan%d.EXSC' % (IOCPV,loop-1))
             
+            for trig in range(1,5):
+                try:
+                    result += caput(scanPV+'T'+str(trig)+'PV',data['detTriggers'][(loop-1)*4+trig-1]['PV'])
+                except:
+                    pass
+
+            #Detectors
+            for det in range(1,7):
+                try:
+                    result += caput(scanPV+'D0'+str(det)+'PV',data['detectors'][(loop-1)*6+det-1]['PV'])
+                except:
+                    pass
+                
             #Set number of points
             number = int(data['number'][loop-1] or 0)
             result += caput(scanPV+'NPTS', number)
