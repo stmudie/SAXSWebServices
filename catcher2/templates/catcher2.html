@@ -20,8 +20,6 @@
 		<script src="{{ url_for('catcher2.static', filename='highcharts/highcharts.js')}}"></script>
 		<script src="{{ url_for('catcher2.static', filename='highcharts/modules/exporting.js')}}"></script>
 		
-		<!-- scanner definitions -->
-		<script src="{{ url_for('catcher2.static', filename='scanners.js')}}"></script>
 <style>
 .ui-autocomplete {
 		max-height:900px;
@@ -37,6 +35,8 @@ WEB_SOCKET_DEBUG = true;
 
 var raw_dat_data = new Array(70);
 for (var i = raw_dat_data.length-1; i >=0; --i) raw_dat_data[i]= {'plotNum':-1,'profile':[0]};
+
+scannersGlobal =[];
 
 var defaultChartSettings = {
             chart: {
@@ -110,9 +110,23 @@ rawDatSettings = $.extend(deep=true,{},defaultChartSettings);
 	
 
 // socket.io specific code
-var socket = io.connect('/catcher');
+var socket = io.connect('/catcher2');
 
 socket.on('connect', function () {
+});
+
+socket.on('scanners', function(scanners) {
+	scannersGlobal = scanners
+	$('#scanner').autocomplete({
+		minLength:0,
+		source: scanners
+		})
+		.focus(function(){$(this).autocomplete('search', "")});
+	
+	$("#scanner").autocomplete("search",scanners[0]);
+	var menu=$("#scanner").autocomplete("widget");
+	$(menu[0].children[0]).click();
+	//socket.emit('change_scanner', scannersGlobal[0]);
 });
 
 socket.on('error', function (e) {
@@ -204,18 +218,15 @@ $(function () {
 
 	$(document).ready(function() {
 
-	$('#scanner').autocomplete({
-		minLength:0,
-		source: Object.keys(scannerStruct)
-		})
-		.focus(function(){$(this).autocomplete('search', "")});
+	
 	
 	
 	$('#scanner').on( "autocompletechange", function( event, ui ) {
-		if (Object.keys(scannerStruct).indexOf(this.value)==-1){
+		
+		if (scannersGlobal.indexOf(this.value)==-1){
 			alert('Invalid Scanner');
 		} else {
-			socket.emit('change_scanner', scannerStruct[this.value]);
+			socket.emit('change_scanner', this.value);
 		}
 	}) ;
 		
