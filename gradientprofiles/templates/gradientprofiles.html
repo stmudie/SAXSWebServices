@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Gradient Profiles</title>
+
+        <script type="text/javascript" src="{{ url_for('gradientprofiles.static', filename='socket.io.js')}}"></script>
+        <script type="text/javascript" src="{{ url_for('gradientprofiles.static', filename='knockout-3.1.0.js')}}"></script>
+
+        <!-- jquery -->
+        <link rel="stylesheet" href="{{ url_for('gradientprofiles.static', filename='jquery/ui_10/css/smoothness/jquery-ui-1.10.3.custom.css')}}">
+        <script src="{{ url_for('gradientprofiles.static', filename='jquery/jquery-1.10.2.js')}}"></script>
+        <script src="{{ url_for('gradientprofiles.static', filename='jquery/ui_10/js/jquery-ui-1.10.3.custom.js')}}"></script>
+
+        <!-- highcharts -->
+        <script src="{{ url_for('gradientprofiles.static', filename='highcharts/highcharts.js')}}"></script>
+        <script src="{{ url_for('gradientprofiles.static', filename='highcharts/modules/exporting.js')}}"></script>
+        <!-- plugin for dragging charts -->
+        <script src="{{ url_for('gradientprofiles.static', filename='highcharts/modules/draggable-points.js')}}"></script>
+
+        <!-- App js -->
+        <script src="{{ url_for('gradientprofiles.static', filename='gradientprofiles.js')}}"></script>
+
+        <!-- Fonts -->
+        <link href='https://fonts.googleapis.com/css?family=Capriola' rel='stylesheet' type='text/css'>
+        <link href="{{ url_for('gradientprofiles.static', filename='font-awesome/css/font-awesome.min.css')}}" rel ="stylesheet">
+
+        <!-- App CSS -->
+        <link rel="stylesheet" href="{{ url_for('gradientprofiles.static', filename='gradientprofiles.css')}}">
+
+    </head>
+<body>
+
+<div id="MessageDialog" title="Message"></div>
+
+<div id="dialog" title="Progress">
+    <div id="progressbar"><div class="progress-label"></div></div>
+</div>
+
+<div id="SelectFilesDialog" title="Select Files" style="float: left;">
+    <div style="width: 800px;">
+        <p>Log file contains <span data-bind='text: files().length'>&nbsp;</span> unique file(s)</p>
+        <div class = 'filetablediv' style = 'background:#FFF4F6;'>
+            <p style="margin-left: 30px;">Samples</p>
+            <div class='scroll'>
+                <table data-bind='visible: files().length > 0' style='width: 100%;'>
+                    <tbody data-bind='foreach: files'>
+                        <tr>
+                            <td data-bind='text: file.name, click: $parent.select, css: selectedCSS' class='donthighlight sample'></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class = 'filetablediv' style = 'background:#F4FCFF;'>
+            <p style="margin-left: 30px;">Buffers</p>
+                <div class='scroll'>
+                <table data-bind='visible: files().length > 0' style="width: 100%;">
+                    <tbody data-bind='foreach: files'>
+                        <tr>
+                            <td data-bind='text: file.name, click: $parent.select, css: selectedCSS' class='donthighlight buffer'></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="inputFields" style="float: left; padding: 10px; border: 2px solid; background: #DADCEF; height: 1200px">
+    <H7>Gradient Profiles</H7>
+    <h3 style="margin-top: 0px;"> Files </h3>
+    <button id="SelectFilesButton" class="myGreenButton" style="width:150px;">Select Files</button></br>
+    <p></p>
+    <label for="BufferOffset">Buffer Offset</label>
+    <input id="BufferOffset" class="spinner" name="BufferOffset" value ="0" onkeypress="return isNumberKey(event,'SampleOffset')" /></br>
+    <p></p>
+    <button id="SubtractButton" class="myOrangeButton" style="width:150px;">Subtract</button></br>
+</div>
+
+<div style="float: left; border:2px solid; background:#F2F2F2">
+    <div id="raw_dat_div" style="width: 1200px; height: 600px; margin: 0 auto"></div>
+</div>
+<div style="clear: both"></div>
+
+<div class="data-loading">
+    <div class="data-icon">
+        <i class="fa fa-refresh fa-spin"></i>
+    </div>
+</div>
+
+</body>
+</html>
