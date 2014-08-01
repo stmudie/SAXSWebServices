@@ -8,6 +8,9 @@ var positionerStruct = {
     Energy: 'SR13ID01HU01:ENERGY_REQ',
     FileNumber: '13PIL1:cam1:FileNumber',
     WAXS2Theta: 'SR13ID01HU02IOC01:WAX_TTH_MTR',
+    Newport_Rot: 'SR13ID01HU02IOC01:SPARE_3_MTR',
+    Chi: 'SR13ID01HU02IOC01:GSAX_CHI_MTR',
+    Chi_Speed: 'SR13ID01HU02IOC01:GSAX_CHI_MTR.VELO',
     None: ''
 }
 var detectorStruct = {

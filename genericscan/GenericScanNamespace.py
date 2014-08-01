@@ -71,10 +71,13 @@ class GenericScanNamespace(BaseNamespace):
             if value == 0:
                 if self.scanflag >= 1:
                     self.emit('scanstop')
-                    if  elapsedtime > 30 :
-			self.AVServer.lpush('soundvision:queue','Scan Done#WindowsExclamation2.wav')
-                    #elif time.time()-self.scanstarttime > 180:
-                    #    self.AVServer.lpush('soundvision:queue','@animal.mp4')
+                    try:
+		    	if elapsedtime > 30 :
+			    self.AVServer.lpush('soundvision:queue','Scan Done#WindowsExclamation2.wav')
+                        #elif time.time()-self.scanstarttime > 180:
+                        #    self.AVServer.lpush('soundvision:queue','@animal.mp4')
+                    except:
+                        pass
                 
                 self.scanflag = 0
                 self.playing = 0
@@ -100,8 +103,11 @@ class GenericScanNamespace(BaseNamespace):
             totalPos = (self.scanflag==1)*self.scanNPTS[0] + (self.scanflag==2)*self.scanNPTS[1]*self.scanNPTS[0] + (self.scanflag==3)*self.scanNPTS[2]*self.scanNPTS[1]*self.scanNPTS[0]
             timeremain = (totalPos/(float(currentPos)+0.1)-1)*(elapsedtime)
             if timeremain < 40 and elapsedtime + timeremain > 180:
-                self.AVServer.lpush('soundvision:queue','@animal.mp4')
-                self.playing = 1
+                try:
+                    self.AVServer.lpush('soundvision:queue','@animal.mp4')
+                    self.playing = 1
+                except:
+                    pass
             
     
     def on_connect(self):
