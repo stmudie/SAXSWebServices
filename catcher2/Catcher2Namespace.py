@@ -1,7 +1,8 @@
+import sys
 from socketio.namespace import BaseNamespace
 from time import sleep, time
 import cPickle as pickle
-import redis
+import zmq.green as zmq
 import numpy as np
 from math import log10, floor
 from epics import caput
@@ -14,14 +15,29 @@ class Catcher2Namespace(BaseNamespace):
     def __init__(self, *args, **kwargs):
         super(Catcher2Namespace,self).__init__(*args,**kwargs)
         
-        self.scaletype = 'absolute'
+        #getattr(sys.modules[__name__],'move')
+        #for prop, val in vars(sys.modules[__name__]).iteritems():
+        #    print prop, ": ", val
         
+        self.scaletype = 'absolute'
         self.scaleoption = {'absolute' : self.absolute, 'fractional' : self.fractional, 'normalised' : self.normalised}
         
-        redisIP,redisdb = self.request['REDIS']['WEBSERVER'].split(':')
-        redisdb = int(redisdb)
-        self.redis = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
+        reqrepContext = zmq.Context()
+        self.reqrepsocket = reqrepContext.socket(zmq.REQ)
+        self.reqrepsocket.connect("tcp://127.0.0.1:5560")
+        self.reqrepsocket.send(pickle.dumps({'message': 'connect', 'data': {'scanname' : ''}}))
+        self.scanners = pickle.loads(self.reqrepsocket.recv())['data']
+                
+        self.scanner = self.scanners[0]
 
+        publisherContext = zmq.Context()
+        self.socketPublisher = publisherContext.socket(zmq.SUB)
+        self.socketPublisher.connect("tcp://127.0.0.1:5561")
+        
+
+    def __contains__(self,param1):
+        return True if param1 in self.__dict__.keys() else False
+        
     def absolute(self, profile):
         return profile
     
@@ -39,67 +55,89 @@ class Catcher2Namespace(BaseNamespace):
         np_profile = np_profile/max(np_profile)
         return list(np_profile)
                 
+
+    def getSendProfile(self,replot=False):
         
-    def sendProfile(self,replot=False):
-        pos1Struct = pickle.loads(self.redis.get('scantoredis:pos1'))
+        self.reqrepsocket.send(pickle.dumps({'message': 'profile', 'data' : {'scanname' : self.scanner}}))
+        message = pickle.loads(self.reqrepsocket.recv())
+        
+        self.sendProfile(message['data'],replot=replot)
+      
+    def sendProfile(self,data,replot=False):
+      
+        pos1Struct = data['posdata']
         pos1temp = pos1Struct['Array']
         pos1 = []
+        
+        if pos1temp == None:
+            print 'return'
+            return
+        
         for p in pos1temp:
             pos1.append(round_to_n(p,5))
 
-        activeDet = pickle.loads(self.redis.get('scantoredis:detActive'))
-        for i,active in enumerate(activeDet, start = 1):
-            if active != '':
-                data = pickle.loads(self.redis.get('scantoredis:det%02d' % (i,)))
-                profile = zip(pos1,self.scaleoption[self.scaletype](data))
-                try:
-                    minimum = [round_to_n(pos1[data.index(min(data))],3),min(data)]
-                    maximum = [round_to_n(pos1[data.index(max(data))],3),max(data)]
-                except:
-                    minimum = [0,0]
-                    maximum = [0,0]
-                statistics = {'max': maximum, 'min': minimum}
-                self.emit('raw_dat', {'detNum':i,'detPV': active, 'profile':profile, 'replot' : replot if self.scaletype == 'absolute' else True, 'statistics' : statistics})
-    
+        for i,key in enumerate(data['detdata']):
+            data = data['detdata'][key]
+            profile = zip(pos1,self.scaleoption[self.scaletype](data))
+            try:
+                minimum = [round_to_n(pos1[data.index(min(data))],3),min(data)]
+                maximum = [round_to_n(pos1[data.index(max(data))],3),max(data)]
+            except:
+                minimum = [0,0]
+                maximum = [0,0]
+            statistics = {'max': maximum, 'min': minimum}
+            
+            self.emit('raw_dat', {'detNum':i,'detPV': key, 'profile':profile, 'replot' : replot if self.scaletype == 'absolute' else True, 'statistics' : statistics})
+            
     def initPlot(self):
         self.emit('clear')
         self.emit('scanner')
-        pos1Struct = pickle.loads(self.redis.get('scantoredis:pos1'))
+        
+        self.reqrepsocket.send(pickle.dumps({'message': 'positioner', 'data' : {'scanname' : self.scanner}}))
+        message = pickle.loads(self.reqrepsocket.recv())
+        pos1Struct = message['data']                
         self.emit('positioner',pos1Struct['PV'], pos1Struct['EGU'])
-    
-    def checkForNewRedisProfile(self):
-        self.sub = self.redis.pubsub()
-        self.sub.subscribe('scantoredis:message')
-        print 'listening'
-        for message in self.sub.listen():
-            if message['data'] == 'NewScan':
-                self.initPlot()
-            elif message['data'] == 'NewPoint':
-                self.sendProfile()
 
+    
+    def listen(self):
+        print 'listening'
+        while True:
+            [scanner,message] = self.socketPublisher.recv_multipart()
+            message = pickle.loads(message)
+            print message['message']
+            if message['message'] == 'NewPoint':
+                self.sendProfile(message['data'])
+            if message['message'] == 'NewScan':
+                self.initPlot()
+    
+                       
     def on_change_scanner(self, scanner):
-        self.redis.set('scantoredis:scanner',scanner)
-        self.redis.publish('scantoredis:pub:scannerchange',1)
+        if self.scanner != '':
+            self.socketPublisher.setsockopt(zmq.UNSUBSCRIBE,str(self.scanner))
+        self.socketPublisher.setsockopt(zmq.SUBSCRIBE,str(scanner))
+        self.scanner = scanner
+        self.initPlot()
+        self.getSendProfile()
     
     def on_move(self,pos):
         print 'move'
-        pos1Struct = pickle.loads(self.redis.get('scantoredis:pos1'))
-        caput(pos1Struct['PV'],pos)
-
+        self.reqrepsocket.send(pickle.dumps({'message' : 'move', 'data' : {'scanname' : self.scanner, 'position' : pos}}))
+        self.reqrepsocket.recv()
+    
     def on_scale(self,type):
         self.scaletype = type
-        self.sendProfile(replot=True)
+        self.getSendProfile(replot=True)
     
     def recv_connect(self):
         print 'connected here'
+        self.emit('scanners',self.scanners)
         self.initPlot()
-        self.sendProfile()
-        g = self.spawn(self.checkForNewRedisProfile)
+        self.getSendProfile()
+        g = self.spawn(self.listen)
         
     def recv_disconnect(self):
-        self.sub.unsubscribe()
         self.kill_local_jobs()
-        print 'disconnect'
+        print 'disconnect all'
 
     def recv_message(self, message):
         print "PING!!!", message
