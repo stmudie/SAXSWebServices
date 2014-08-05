@@ -6,13 +6,13 @@ import time
 
 # Base PVS
 indexPV = "13INDEXARRAY:array"
-#indexPV = "SMTESTINDEX:array"
+indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
-#IOCPV = 'SMTEST:'
+IOCPV = 'SMTEST:'
 triggerPV = '13PIL1:cam1:Acquire'
-#triggerPV = 'SMTEST:cam1:Acquire'
+triggerPV = 'SMTEST:cam1:Acquire'
 filenamePV = '13PIL1:cam1:FileName'
-#filenamePV = 'SMTEST:cam1:FileName'
+filenamePV = 'SMTEST:cam1:FileName'
 
 
 def xstr(s):

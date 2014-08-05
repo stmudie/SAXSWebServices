@@ -199,9 +199,8 @@
 		var globalscan;
 		var globalscanlist;
 		var globalbeamline = 'None';
+        var globalselectorlists
 		var currentRow = 0;
-		
-		
 		
 		socket.on('connect', function(){
 			socket.emit('connect')
@@ -211,12 +210,24 @@
 			alert(message);
 		})
 		
-                socket.on('beamline', function(beamline){
-                    if (beamline != null){
-			globalbeamline = beamline;
+        socket.on('beamline', function(beamline){
+            if (beamline != null){
+		    	globalbeamline = beamline;
 		    } else {
 		        globalbeamline = 'None';
-                    }
+            }
+
+            if (beamline == "SAXSTEST") {
+                PVStruct = positionerTestStruct;
+		DetTrigStruct = detectorTrigTestStruct;
+		DetStruct = detectorTestStruct;
+            } else {
+                PVStruct = positionerStruct;
+		DetTrigStruct = detectorTrigStruct;
+		DetStruct = detectorStruct;
+            }
+            globalselectorLists = {Type: ['Linear','Exponential','Table'], "Abs/Rel": ['Absolute','Relative'], Positioner: Object.keys(PVStruct),Det_Trigger: Object.keys(DetTrigStruct),Detector: Object.keys(DetStruct)};
+
 		});
 	
 		socket.on('epn', function(epn){
@@ -385,10 +396,7 @@
 			return list
 			
 		}
-		
-		var selectorLists = {Type: ['Linear','Exponential','Table'], "Abs/Rel": ['Absolute','Relative'], Positioner: Object.keys(positionerStruct),Det_Trigger: Object.keys(detectorTrigStruct),Detector: Object.keys(detectorStruct)};
-		
-		
+
 		function AutoCompleteEditor(args) {
 			var $input;
 			var defaultValue;
@@ -402,7 +410,7 @@
 				  e.stopImmediatePropagation();
 				}
 			      })
-			      .autocomplete({minLength:0, source:selectorLists[(args.item.rows.split(" "))[0]]})
+			      .autocomplete({minLength:0, source:globalselectorLists[(args.item.rows.split(" "))[0]]})
 			      .focus(function(){$(this).autocomplete('search', "")})
 			      .select();
 			};
@@ -549,10 +557,14 @@
 			
 			if (globalbeamline == 'SAXSTEST') {
 				PVStruct = positionerTestStruct;
+				DetStruct = detectorTestStruct;
+				DetTrigStruct = detectorTrigTestStruct;
 				console.log('SAXSTEST');
 			} else
 			{
 				PVStruct = positionerStruct;
+				DetStruct = detectorStruct;
+				DetTrigStruct = detectorTrigStruct;
 			}
 			
 			for (var loop = 0; loop <=3; ++loop) {
@@ -564,7 +576,11 @@
 				
 				for (posIndex = 1; posIndex <= 3; ++posIndex) {
 					positionerTemp = (fillData[loop])[0]['position'+String(posIndex)]
-					positioner.push({Name: positionerTemp, PV: PVStruct[positionerTemp]});
+					if (positionerTemp == '' || positionerTemp === undefined) {
+						positioner.push({});
+					} else {
+					    positioner.push({Name: positionerTemp, PV: PVStruct[positionerTemp]});
+					};
 					type.push((fillData[loop])[1]['position'+String(posIndex)]);
 					relative.push((fillData[loop])[2]['position'+String(posIndex)]);
 					start.push((fillData[loop])[3]['position'+String(posIndex)]);
@@ -584,12 +600,12 @@
 				
 				for (detTrigIndex = 0; detTrigIndex <=3; detTrigIndex++){
 					detTriggerTemp = (detectorData[loop])[detTrigIndex]['value']
-					detTriggers.push({Name: detTriggerTemp, PV: detectorTrigStruct[detTriggerTemp]})
+					detTriggers.push({Name: detTriggerTemp, PV: DetTrigStruct[detTriggerTemp]})
 				};
 				
 				for (detIndex = 4; detIndex <=9; detIndex++){
 					detectorTemp = (detectorData[loop])[detIndex]['value']
-					detectors.push({Name: detectorTemp, PV: detectorStruct[detectorTemp]})
+					detectors.push({Name: detectorTemp, PV: DetStruct[detectorTemp]})
 				};
 			}
 			

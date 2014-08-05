@@ -8,8 +8,8 @@ from saxsprofiles import saxsprofiles_app
 from saxsprofiles import SAXSProfilesNamespace
 from secprofiles import secprofiles_app
 from secprofiles import SECProfilesNamespace
-from gradientprofiles import gradientprofiles_app
-from gradientprofiles import GradientProfilesNamespace
+#from gradientprofiles import gradientprofiles_app
+#from gradientprofiles import GradientProfilesNamespace
 from pipelinereport import pipelinereport_app
 from pipelinereport import PipelineReportNamespace
 from genericscan import genericscan_app
@@ -42,7 +42,7 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.register_blueprint(wellPlate_app, url_prefix='/wellplates')
 app.register_blueprint(saxsprofiles_app, url_prefix='/saxsprofiles')
 app.register_blueprint(secprofiles_app, url_prefix='/secprofiles')
-app.register_blueprint(gradientprofiles_app, url_prefix='/gradientprofiles')
+#app.register_blueprint(gradientprofiles_app, url_prefix='/gradientprofiles')
 app.register_blueprint(pipelinereport_app, url_prefix='/pipelinereport')
 app.register_blueprint(genericscan_app, url_prefix='/genericscan')
 app.register_blueprint(logviewer_app, url_prefix='/logviewer')
@@ -58,16 +58,18 @@ def run_socketio(path):
     
     if vbl.current_user != None:
         user = vbl.current_user['email']
-    else :
+    else:
         user = 'Beamline'
     
     print beamline.current
     
-    attributes = { 'epn' : [user], 'REDIS' : app.config['REDIS'], 'GENERAL' : app.config['GENERAL'],'beamline' : beamline.current}
+    attributes = { 'epn': [user], 'REDIS': app.config['REDIS'], 'GENERAL': app.config['GENERAL'], 'beamline': beamline.current}
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/mdaplotter':MDAPlotterNamespace}, attributes)
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace}, attributes)
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace, '/catcher':CatcherNamespace}, attributes)
-    socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/gradientprofiles':GradientProfilesNamespace,'/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace, '/catcher2':Catcher2Namespace}, attributes)
+    socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace,
+                                      #'/gradientprofiles':GradientProfilesNamespace,
+                                      '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace, '/catcher2':Catcher2Namespace}, attributes)
     return ''
 
 if __name__ == '__main__':

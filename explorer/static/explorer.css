@@ -1,0 +1,198 @@
+H7 {display:inline-block;font-family: 'Capriola', sans-serif;font-size: 20pt;font-weight: bold;margin-bottom: 10px;}
+
+.ui-progressbar {
+    position: relative;
+}
+.progress-label {
+    position: absolute;
+    left: 0%;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #fff;
+}
+.spinner {
+    width: 50px;
+}
+.inputFields label, .myfields input {
+    display:inline-block;
+}
+.inputFields label {
+    width:120px; /* or whatever size you want them */
+}
+.myGreenButton {
+    height: 30px;
+    width: 90px;
+    font-size: small;
+    color: black;
+    font-weight: bold;
+    background:-webkit-linear-gradient(top, #33AA2A, #30F41A 5%, #39E81E, #33AA2A 95%, #33AA2A);
+}
+.myGreenButton:hover {
+    color: white;
+}
+.myGreenButton:active {
+    color: white;
+    background:-webkit-linear-gradient(top, #30F41A, #33AA2A 5%, #277519, #39E81E 95%, #30F41A);
+}
+.myLeftButton {
+    margin: 5px;
+    height: 35px;
+    width:35px;
+    border: none;
+    background: transparent;
+    background-image: url({{ url_for('gradientprofiles.static', filename='arrow-blue-left.png')}});
+}
+.myLeftButton:active {
+    margin: 5px;
+    margin-left: 4px;
+    margin-right: 6px;
+    height: 35px;
+    width:35px;
+    border: none;
+    background: transparent;
+    background-image: url({{ url_for('gradientprofiles.static', filename='arrow-grey-left.png')}});
+}
+.myRightButton {
+    margin: 5px;
+    height: 35px;
+    width:35px;
+    border: none;
+    background: transparent;
+    background-image: url({{ url_for('gradientprofiles.static', filename='arrow-blue-right.png')}});
+}
+.myRightButton:active {
+    margin: 5px;
+    height: 35px;
+    width:35px;
+    border: none;
+    background: transparent;
+    background-image: url({{ url_for('gradientprofiles.static', filename='arrow-grey-right.png')}});
+}
+.myBlueButton {
+    padding: 0;
+    height: 30px;
+    width: 60px;
+    font-size: small;
+    color: black;
+    font-weight: normal;
+    background:-webkit-linear-gradient(top, #287AA3, #1AA6ED 5%, #1D9FE0, #287AA3 95%, #287AA3);
+}
+.myBlueButton:hover {
+    color: white;
+}
+.myBlueButton:active {
+    color: white;
+    background:-webkit-linear-gradient(top, #1AA6ED, #287AA3 5%, #18516D, #1D9FE0 95%, #1AA6ED);
+}
+.myPurpleButton {
+    height: 30px;
+    width: 90px;
+    font-size: small;
+    color: black;
+    font-weight: bold;
+    background:-webkit-linear-gradient(top, #7C29A5, #A81AEF 5%, #A11DE2, #7C29A5 95%, #7C29A5);
+}
+.myPurpleButton:hover {
+    color: white;
+}
+.myPurpleButton:active {
+    color: white;
+    background:-webkit-linear-gradient(top, #A81AEF, #7C29A5 5%, #531870, #A11DE2 95%, #A81AEF);
+}
+.myOrangeButton {
+    height: 30px;
+    width: 90px;
+    font-size: small;
+    color: black;
+    font-weight: bold;
+    background:-webkit-linear-gradient(top, #A8712A, #F2B11A 5%, #E5B01D, #A8712A 95%, #A8712A);
+}
+.myOrangeButton:hover {
+    color: white;
+}
+.myOrangeButton:active {
+    color: white;
+    background:-webkit-linear-gradient(top, #F2B11A, #A8712A 5%, #725719, #E5B01D 95%, #F2B11A);
+}
+.myButton {
+    height: 30px;
+    font-size: small;
+    color: #333333;
+}
+/* File list css */
+#feedback { font-size: 1.4em; }
+#samplelistsel .ui-selecting { background: #FECA40; }
+#samplelistsel .ui-selected { background: #F39814; color: white; }
+#samplelistsel { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+#samplelistsel li { margin: 3px; padding: 0.4em; font-size: small; height: 18px; }
+
+.filelist.sample{
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height:720px;
+    font-size: small;
+    float: left;
+    margin-right: 10px;
+}
+.filelist.buffer{
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height:720px;
+    font-size: small;
+    float: left;
+}
+tr:nth-child(odd) td.expDir.selected{color: white; background: red}
+tr:nth-child(even) td.expDir.selected{color: white; background: red}
+
+.donthighlight{-moz-user-select:-moz-none;-moz-user-select:none;-o-user-select:none;
+               -khtml-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none}
+
+.scroll {
+    height:600px;
+    overflow-y: scroll;
+    margin-left: 5px;
+}
+
+.filetable {
+    width: 100%;
+    font-size: small;
+}
+
+table { border:1px solid black; border-collapse: collapse;cursor: crosshair;}
+td.sample{ border:1px solid lightpink;}
+tr:nth-child(odd) td.expDir{background: lightpink;}
+tr:nth-child(even) td.expDir{background: #FFEAED;}
+
+/* Navigation Tabs CSS*/
+/* Equal width tabs */
+.ui-tabs .ui-tabs-nav li a { width: 155px; }
+.ui-tabs .ui-tabs-panel { padding: 0px;}
+
+/* Spinner*/
+.data-loading {
+ display:    none;
+ position:   fixed;
+ z-index:    1000;
+ top:        0;
+ left:       0;
+ height:     100%;
+ width:      100%;
+ background: rgba( 128, 128, 128, .25 );
+ text-align: center;
+}
+
+.data-icon {
+ color: black;
+ bottom: 0;
+ height: 100px;
+ font-size: 100px;
+ left: 0;
+ margin: auto;
+ position: absolute;
+ top: 0;
+ right: 0;
+ line-height: 100px;
+}
+
+body.loading .data-loading {
+ display: block;
+}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	    <meta charset="utf-8">
+	    <title>Experiment Explorer</title>
+
+        <!-- socketio -->
+	    <script type="text/javascript" src="{{ url_for('explorer.static', filename='socket.io.js')}}"></script>
+
+        <!-- jquery -->
+        <link rel="stylesheet" href="{{ url_for('explorer.static', filename='jquery/ui/jquery-ui.css')}}">
+        <script type="text/javascript" src="{{ url_for('explorer.static', filename='jquery/jquery-1.10.2.js')}}"></script>
+        <script type="text/javascript" src="{{ url_for('explorer.static', filename='jquery/ui/jquery-ui.js')}}"></script>
+
+        <!-- Knockout -->
+        <script type="text/javascript" src="{{ url_for('explorer.static', filename='knockout-3.1.0.js')}}"></script>
+
+        <!-- App JS -->
+        <script type="text/javascript" src="{{ url_for('explorer.static', filename='explorer.js')}}"></script>
+
+         <!-- App CSS -->
+        <link rel="stylesheet" href="{{ url_for('explorer.static', filename='explorer.css')}}">
+
+
+    </head>
+    <body>
+        <div id="SelectExperimentsDialog" title="Select Files" style="float: left;">
+            <div style="width: 700px;">
+                <p>There are <span data-bind='text: items().length'>&nbsp;</span> experiments.</p>
+                <div class = 'experimenttablediv' style = 'background:#FFF4F6;'>
+                    <p style="margin-left: 30px;">Experiment Directories</p>
+                    <div class='scroll'>
+                        <table data-bind='visible: items().length > 0' style='width: 100%;'>
+                            <tbody data-bind='foreach: items'>
+                                <tr>
+                                    <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div id="LHTabs" style="width: 200px;">
+                <ul>
+                    <li><a href="#analysis">Analysis</a></li>
+                    <li><a href="#manual">Manual</a></li>
+                    <li><a href="#raw_dat">raw_dat</a></li>
+                </ul>
+                <div id="analysis">
+                    <p>There are <span data-bind='text: items().length'>&nbsp;</span> files.</p>
+                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
+                        <p style="margin-left: 5px;">Files</p>
+                        <div class='scroll'>
+                            <table data-bind='visible: items().length > 0' class = 'filetable'>
+                                <tbody data-bind='foreach: items'>
+                                    <tr>
+                                        <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="manual">
+                    <p>There are <span data-bind='text: items().length'>&nbsp;</span> files.</p>
+                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
+                        <p style="margin-left: 5px;">Files</p>
+                        <div class='scroll'>
+                            <table data-bind='visible: items().length > 0' class = 'filetable'>
+                                <tbody data-bind='foreach: items'>
+                                    <tr>
+                                        <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="raw_dat">
+                    <p>There are <span data-bind='text: items().length'>&nbsp;</span> files.</p>
+                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
+                        <p style="margin-left: 5px;">Files</p>
+                        <div class='scroll'>
+                            <table data-bind='visible: items().length > 0' class = 'filetable'>
+                                <tbody data-bind='foreach: items'>
+                                    <tr>
+                                        <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
