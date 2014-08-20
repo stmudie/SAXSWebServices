@@ -294,6 +294,10 @@ socket.on('offset',function(slide){
     $("#BufferOffset").val(slide);
 });
 
+socket.on('finished_sub', function(){
+    $('body').toggleClass('loading');
+});
+
 socket.on('title', function(title){
    highq_chart.setTitle({text: title});
 });
@@ -338,7 +342,8 @@ $(function () {
 
         $( "#SubtractButton").button()
             .click(function(){
-                socket.emit("subtract", parseFloat($("#BufferOffset").val()));
+                socket.emit("subtract", -1*parseFloat($("#BufferOffset").val()), $("#analyse").is(':checked'));
+                $('body').toggleClass('loading');
             });
 
         $("#MessageDialog").dialog({

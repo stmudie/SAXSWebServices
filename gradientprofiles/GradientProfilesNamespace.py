@@ -6,6 +6,7 @@ from math import floor
 import cPickle as pickle
 import redis
 import sys
+import re
 sys.path.append(abspath('../'))
 from saxs_auto.dat import DatFile
 import saxs_auto.dat as dat
@@ -76,14 +77,17 @@ class GradientProfilesNamespace(BaseNamespace):
         self.emit('offset', sumarray.index(min(sumarray))-slide_range)
         self.emit('title', self.sample_file)
 
-    def on_subtract(self, offset):
+    def on_subtract(self, offset, analyse=False):
+        # A positive offset means that the buffers graph has been moved negative, as higher buffer indices associated with lower sample indices.
         offset_int = int(floor(offset))
         offset_frac = offset - offset_int
-
+        
         if offset_int >= 0:
+            offset_string = 'offset_' + re.sub('\.', 'p', str(offset))
             buff_offset_int = offset_int
             samp_offset_int = 0
         else:
+            offset_string = 'offset_minus_' + re.sub('\.', 'p', str(abs(offset)))
             buff_offset_int = 0
             samp_offset_int = abs(offset_int)
 
@@ -91,12 +95,17 @@ class GradientProfilesNamespace(BaseNamespace):
         buffer_first_num = str(self.buffer_high[0][0] + buff_offset_int).zfill(self.suflen)
 
         offset_obj = OffsetSubtract()
-        number = offset_obj.subtract(join(self.expdir, 'raw_dat'), '%s_%s.dat' % (self.sample_file, sample_first_num),
-                            '%s_%s.dat' % (self.buffer_file, buffer_first_num), offset_frac, '/home/mudies/testsub/',
-                            '/home/mudies/testsub/', False)
-
+        try:
+            number = offset_obj.subtract(join(self.expdir, 'raw_dat'), '%s_%s.dat' % (self.sample_file, sample_first_num),
+                            '%s_%s.dat' % (self.buffer_file, buffer_first_num), offset_frac, join(self.expdir, 'manual', offset_string),
+                            join(self.expdir, 'analysis', offset_string), analyse)
+        except OSError:
+            number = -1
+        
+        self.emit('finished_sub')
         self.emit('message', {'message': '{} files subtracted.'.format(number), 'title': 'Subtraction Finished'})
 
+    
     def find_raw_profiles(self, ):
         with open(self.logfile, 'r') as f:
             for line in f:

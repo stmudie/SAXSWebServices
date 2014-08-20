@@ -15,9 +15,20 @@
         <!-- Knockout -->
         <script type="text/javascript" src="{{ url_for('explorer.static', filename='knockout-3.1.0.js')}}"></script>
 
-        <!-- App JS -->
+	<!-- Highcharts -->
+	<script type="text/javascript" src="{{ url_for('explorer.static', filename='highcharts/js/highcharts.js')}}"></script>
+	<script type="text/javascript" src="{{ url_for('explorer.static', filename='highcharts/js/modules/downsample/highcharts-downsample.js')}}"></script>
+	
+        <!-- JS Tree -->
+	<script type="text/javascript" src="{{ url_for('explorer.static', filename='jsTree/jstree.js')}}"></script>
+	<link rel="stylesheet" href="{{ url_for('explorer.static', filename='jsTree/themes/default/style.min.css')}}">
+	
+	<!-- App JS -->
         <script type="text/javascript" src="{{ url_for('explorer.static', filename='explorer.js')}}"></script>
 
+	<!-- Fonts -->
+	<link href="{{ url_for('explorer.static', filename='font-awesome/css/font-awesome.min.css')}}" rel ="stylesheet">
+	
          <!-- App CSS -->
         <link rel="stylesheet" href="{{ url_for('explorer.static', filename='explorer.css')}}">
 
@@ -42,51 +53,62 @@
             </div>
         </div>
         <div>
-            <div id="LHTabs" style="width: 200px;">
-                <ul>
-                    <li><a href="#analysis">Analysis</a></li>
-                    <li><a href="#manual">Manual</a></li>
-                    <li><a href="#raw_dat">raw_dat</a></li>
-                </ul>
-                <div id="analysis">
-                    <p>There are <span data-bind='text: items().length'>&nbsp;</span> files.</p>
+            <div id="LHTabs" style="width: 15%;float: left;">
+                <div id="folder_tree"><</div>
+		<div id="avg" data-bind='visible: div_visible'>
+		    Filter: <input type="text" data-bind="value: filter_input" style="width: 180px;">
                     <div class = 'filetablediv' style = 'background:#FFF4F6;'>
                         <p style="margin-left: 5px;">Files</p>
                         <div class='scroll'>
                             <table data-bind='visible: items().length > 0' class = 'filetable'>
                                 <tbody data-bind='foreach: items'>
                                     <tr>
-                                        <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <div id="manual">
-                    <p>There are <span data-bind='text: items().length'>&nbsp;</span> files.</p>
+                <div id="analysis" data-bind='visible: div_visible'>
+		    <input type="text" data-bind="value: filter_input">
                     <div class = 'filetablediv' style = 'background:#FFF4F6;'>
                         <p style="margin-left: 5px;">Files</p>
                         <div class='scroll'>
                             <table data-bind='visible: items().length > 0' class = 'filetable'>
                                 <tbody data-bind='foreach: items'>
                                     <tr>
-                                        <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                <div id="raw_dat">
-                    <p>There are <span data-bind='text: items().length'>&nbsp;</span> files.</p>
+                <div id="manual" data-bind='visible: div_visible'>
+		    <input type="text" data-bind="value: filter_input">
                     <div class = 'filetablediv' style = 'background:#FFF4F6;'>
                         <p style="margin-left: 5px;">Files</p>
                         <div class='scroll'>
                             <table data-bind='visible: items().length > 0' class = 'filetable'>
                                 <tbody data-bind='foreach: items'>
                                     <tr>
-                                        <td data-bind='text: item.name, click: $parent.select, css: selectedCSS' class='donthighlight expDir'></td>
+                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="raw_dat" data-bind='visible: div_visible'>
+		    <input type="text" data-bind="value: filter_input">
+                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
+                        <p style="margin-left: 5px;">Files</p>
+                        <div class='scroll'>
+                            <table data-bind='visible: items().length > 0' class = 'filetable'>
+                                <tbody data-bind='foreach: items'>
+                                    <tr>
+                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -94,6 +116,12 @@
                     </div>
                 </div>
             </div>
-        </div>
+	    <div id="container" style="width:80%; height:900px;float: left;border: solid;"></div>
+	</div>
+	<div class="data-loading">
+	    <div class="data-icon">
+		<i class="fa fa-refresh fa-spin"></i>
+	    </div>
+	</div>
     </body>
 </html>
