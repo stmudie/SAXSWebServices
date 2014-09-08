@@ -141,29 +141,29 @@ class WellPlateNamespace(BaseNamespace):
         # Setup global scan record parameters
         scanPV = 'SR13ID01HU02IOC02:scan1.'
         result = 0
-        result += caput(indexPV + ':arrayIndex1',0)
-        result += caput(scanPV+'CMND',6)
-        result += caput(scanPV+'BSPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
-        result += caput(scanPV+'BSCD',0)
-        result += caput(scanPV+'ASPV','SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
-        result += caput(scanPV+'ASCD',1)
-        result += caput(scanPV+'D01PV','SR13ID01SYR01:FULL_SEL_SQ.VAL')
-        result += caput(scanPV+'PDLY',2)
-        result += caput(scanPV+'DDLY',5)
+        result += caput(indexPV + ':arrayIndex1', 0)
+        result += caput(scanPV+'CMND', 6)
+        result += caput(scanPV+'BSPV', 'SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
+        result += caput(scanPV+'BSCD', 0)
+        result += caput(scanPV+'ASPV', 'SR13ID01SYR01:SCAN_RECORD_MESSAGE.VAL')
+        result += caput(scanPV+'ASCD', 1)
+        result += caput(scanPV+'D01PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
+        result += caput(scanPV+'PDLY', 2)
+        result += caput(scanPV+'DDLY', 5)
         if result != 9 :
             print "Something wrong setting " + str(9-result) + " PVs. Continuing anyway."
         
         # Setup positioners for proteins
         result = 0
         positioner = ['SR13ID01SYR01:SMPL_RAW_COORD','SR13ID01SYR01:WASH_TYPE','SR13ID01HU02IOC04:SMPL_TYPE']
-        dictKey = ['COORD','WASH','TYPE']
+        dictKey = ['COORD', 'WASH', 'TYPE']
         data = {'COORD': positions, 'WASH': washes, 'TYPE': types}
         for posNum in range(3):
             result += caput(scanPV+'R'+str(1+posNum)+'PV', positioner[posNum])
             result += caput(scanPV+'P'+str(1+posNum)+'PV', positioner[posNum])
             result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
             time.sleep(0.1)
-            result += caput(scanPV+'P'+str(1+posNum)+'PA',data[dictKey[posNum]])
+            result += caput(scanPV+'P'+str(1+posNum)+'PA', data[dictKey[posNum]])
             result += caput(scanPV+'NPTS', len(positions))
 
 
@@ -184,26 +184,26 @@ class WellPlateNamespace(BaseNamespace):
         result += caput(scanPV+'P4EP', len(positions)-1)
         result += caput(scanPV+'R4PV', indexPV + ':arrayIndex1')
         result += caput(scanPV+'P4PV', indexPV + ':arrayIndex1')
-        result += caput(indexPV+':arrayIndex2',0)
-        result += caput(indexPV+':arrayIndex3',0)
-        if result != 11 :
+        result += caput(indexPV+':arrayIndex2', 0)
+        result += caput(indexPV+':arrayIndex3', 0)
+        if result != 11:
             print "Something wrong setting some PVs. Continuing anyway."
  
         # Setup detectors
         result = caput(scanPV+'T1PV', 'SR13ID01SYR01:FULL_SEL_SQ.VAL')
-        if result != 1 :
+        if result != 1:
             print "Something wrong setting some PVs. Continuing anyway."        
 
     def run(self):
         scanPV = 'SR13ID01HU02IOC02:scan1.'
         scanning = caput(scanPV+'EXSC', 1)
         
-    def on_runall(self,epn,plate):
-        self.on_initialise(epn, plate, type = 'all')
+    def on_runall(self, epn, plate):
+        self.on_initialise(epn, plate, type='all')
         self.run()
 
-    def on_runselected(self,epn,plate):
-        self.on_initialise(epn, plate, type = 'selected')
+    def on_runselected(self, epn, plate):
+        self.on_initialise(epn, plate, type='selected')
         self.run()
 
     def recv_message(self, message):

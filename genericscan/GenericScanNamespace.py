@@ -9,9 +9,9 @@ indexPV = "13INDEXARRAY:array"
 #indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
 #IOCPV = 'SMTEST:'
-triggerPV = '13PIL1:cam1:Acquire'
+triggerPV = 'SR13ID01IOC69:Acquire_CMD'
 #triggerPV = 'SMTEST:cam1:Acquire'
-filenamePV = '13PIL1:cam1:FileName'
+filenamePV = 'SR13ID01IOC69:FileNameCommon'
 #filenamePV = 'SMTEST:cam1:FileName'
 
 
@@ -72,8 +72,8 @@ class GenericScanNamespace(BaseNamespace):
                 if self.scanflag >= 1:
                     self.emit('scanstop')
                     try:
-		    	if elapsedtime > 30 :
-			    self.AVServer.lpush('soundvision:queue','Scan Done#WindowsExclamation2.wav')
+                        if elapsedtime > 30:
+                            self.AVServer.lpush('soundvision:queue', 'Scan Done#WindowsExclamation2.wav')
                         #elif time.time()-self.scanstarttime > 180:
                         #    self.AVServer.lpush('soundvision:queue','@animal.mp4')
                     except:
@@ -273,7 +273,7 @@ class GenericScanNamespace(BaseNamespace):
             
             for trig in range(1,5):
                 try:
-                    result += caput(scanPV+'T'+str(trig)+'PV',data['detTriggers'][(loop-1)*4+trig-1]['PV'])
+                    result += caput(scanPV+'T'+str(trig)+'PV', data['detTriggers'][(loop-1)*4+trig-1]['PV'])
                 except:
                     pass
 
@@ -308,16 +308,14 @@ class GenericScanNamespace(BaseNamespace):
                 result += caput(indexPV + ':arrayIndex2',0)
                 result += caput(indexPV + ':arrayIndex3',0)
            
-            for posNum in range(3) :
+            for posNum in range(3):
                 absPos = (loop-1)*3+posNum
                 
-                if not data['positioners'][absPos] :
+                if not data['positioners'][absPos]:
                     continue
                 
-                print data['positioners']
-                
                 try:
-                    start =float(data['start'][absPos])
+                    start = float(data['start'][absPos])
                 except:
                     pass
 
@@ -326,28 +324,33 @@ class GenericScanNamespace(BaseNamespace):
                 except:
                     pass
 
+                try:
+                    step = float(data['step'][absPos])
+                except:
+                    pass
+
                 scantype = data['type'][absPos]
                 
                 result += caput(scanPV+'R'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
                 result += caput(scanPV+'P'+str(1+posNum)+'PV', data['positioners'][absPos]['PV'])
-                result += caput(scanPV+'P'+str(1+posNum)+'AR', data['relative'][absPos]=='Relative')
+                result += caput(scanPV+'P'+str(1+posNum)+'AR', data['relative'][absPos] == 'Relative')
                                 
                 if scantype == 'Linear':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 0)
                     result += caput(scanPV+'P'+str(1+posNum)+'SP', start)
-                    result += caput(scanPV+'P'+str(1+posNum)+'EP',end)
+                    result += caput(scanPV+'P'+str(1+posNum)+'EP', end)
                 
-                elif scantype == 'Exponential' :
-                    prefactor = (end-start)/((number-1)*(step**(number-1)));
+                elif scantype == 'Exponential':
+                    prefactor = (end-start)/((number-1)*(step**(number-1)))
                     array = [start + prefactor*i*(step**i) for i in range(number)]
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
                     result += caput(scanPV+'P'+str(1+posNum)+'PA', array)
                 
-                elif scantype == 'Table' :
+                elif scantype == 'Table':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
                     tableData = [carefulfloat(dataPoint) for dataPoint in (data['tableData'][tableCount])]
                     result += caput(scanPV+'P'+str(1+posNum)+'PA', tableData)
-                    tableCount = tableCount + 1
+                    tableCount += 1
                     
                 else:
                     pass
@@ -361,7 +364,7 @@ class GenericScanNamespace(BaseNamespace):
                     level = 3
                     if ((data['number'][2] or 0) > 0):
                         level = 4
-    
+
         return level
 
     def checklimits(self, level):

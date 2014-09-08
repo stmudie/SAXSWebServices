@@ -20,7 +20,7 @@ var detectorStruct = {
     'Scaler4': 'SR13ID01HU02IOC02:scaler1.S4'
 };
 var detectorTrigStruct = {
-    'Pilatus1M': '13PIL1:cam1:Acquire',
+    'Acquire': 'SR13ID01IOC69:Acquire_CMD',
     'Scan1': 'SR13ID01HU02IOC02:scan1.EXSC',
     'Scan2': 'SR13ID01HU02IOC02:scan2.EXSC',
     'Scan3': 'SR13ID01HU02IOC02:scan3.EXSC',

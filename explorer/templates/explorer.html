@@ -55,12 +55,12 @@
         <div>
             <div id="LHTabs" style="width: 15%;float: left;">
                 <div id="folder_tree"><</div>
-		<div id="avg" data-bind='visible: div_visible'>
-		    Filter: <input type="text" data-bind="value: filter_input" style="width: 180px;">
+		<div id="filelist_div">
+		    <!--Filter: <input type="text" data-bind="value: filter_input" style="width: 180px;">-->
                     <div class = 'filetablediv' style = 'background:#FFF4F6;'>
                         <p style="margin-left: 5px;">Files</p>
                         <div class='scroll'>
-                            <table data-bind='visible: items().length > 0' class = 'filetable'>
+                            <table data-bind='with: selectedList, class = 'filetable'>
                                 <tbody data-bind='foreach: items'>
                                     <tr>
                                         <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
@@ -70,57 +70,12 @@
                         </div>
                     </div>
                 </div>
-                <div id="analysis" data-bind='visible: div_visible'>
-		    <input type="text" data-bind="value: filter_input">
-                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
-                        <p style="margin-left: 5px;">Files</p>
-                        <div class='scroll'>
-                            <table data-bind='visible: items().length > 0' class = 'filetable'>
-                                <tbody data-bind='foreach: items'>
-                                    <tr>
-                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div id="manual" data-bind='visible: div_visible'>
-		    <input type="text" data-bind="value: filter_input">
-                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
-                        <p style="margin-left: 5px;">Files</p>
-                        <div class='scroll'>
-                            <table data-bind='visible: items().length > 0' class = 'filetable'>
-                                <tbody data-bind='foreach: items'>
-                                    <tr>
-                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div id="raw_dat" data-bind='visible: div_visible'>
-		    <input type="text" data-bind="value: filter_input">
-                    <div class = 'filetablediv' style = 'background:#FFF4F6;'>
-                        <p style="margin-left: 5px;">Files</p>
-                        <div class='scroll'>
-                            <table data-bind='visible: items().length > 0' class = 'filetable'>
-                                <tbody data-bind='foreach: items'>
-                                    <tr>
-                                        <td data-bind='text: item.name, click: $parent.send, css: selectedCSS, visible: visible' class='donthighlight expDir'></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+	    </div>
 	    <div id="container" style="width:80%; height:900px;float: left;border: solid;"></div>
-	</div>
-	<div class="data-loading">
-	    <div class="data-icon">
-		<i class="fa fa-refresh fa-spin"></i>
+	    <div class="data-loading">
+		<div class="data-icon">
+		    <i class="fa fa-refresh fa-spin"></i>
+		</div>
 	    </div>
 	</div>
     </body>

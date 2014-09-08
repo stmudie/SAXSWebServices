@@ -17,22 +17,26 @@ socket.on('files', function(directory, files){
             expDirModel.newItems(files_temp);
             break;
         case "analysis":
-            analysisModel.newItems(files_temp);
+            fileListModel.addList('analysis',files_temp)
+            //analysisModel.newItems(files_temp);
             node = $('#folder_tree').jstree(true).get_node('analysis')
             $('#folder_tree').jstree(true).rename_node(node, 'Analysis ' + files_temp.length)
             break;
         case "manual":
-            manualModel.newItems(files_temp);
+            fileListModel.addList('manual',files_temp)
+            //manualModel.newItems(files_temp);
             node = $('#folder_tree').jstree(true).get_node('manual')
             $('#folder_tree').jstree(true).rename_node(node, 'Manual ' + files_temp.length)
             break;
         case "raw_dat":
-            raw_datModel.newItems(files_temp);
+            fileListModel.addList('raw_dat',files_temp)
+            //raw_datModel.newItems(files_temp);
             node = $('#folder_tree').jstree(true).get_node('raw_dat')
             $('#folder_tree').jstree(true).rename_node(node, 'Raw ' + files_temp.length)
             break;
         case "avg":
-            avgModel.newItems(files_temp);
+            fileListModel.addList('avg',files_temp)
+            //avgModel.newItems(files_temp);
             node = $('#folder_tree').jstree(true).get_node('avg')
             $('#folder_tree').jstree(true).rename_node(node, 'Average ' + files_temp.length)
             break;
@@ -72,6 +76,7 @@ socket.on('data', function(data) {
 
 /* File/Folder Selection Code */
 
+/* Single item class*/
 var itemModel = function(item){
     var self = this;
 
@@ -93,6 +98,7 @@ var itemModel = function(item){
     };
 };
 
+/* List of items class */
 var itemListModel = function(items, multiselect) {
     var self = this;
 
@@ -154,15 +160,15 @@ var itemListModel = function(items, multiselect) {
         }
     };
     
-    self.filter = function(filter) {
+    /*self.filter = function(filter) {
         self.items().forEach(function(i){
-            i.set_visibile(~i.item.name.indexOf(filter))
+            i.set_visibile(~i.item.name.indexof(filter))
         });
     }
 
     ko.computed(function(){
        self.filter(self.filter_input());
-    });
+    });*/
     
     self.itemList = ko.computed(function(){
         selectedList =[];
@@ -174,6 +180,7 @@ var itemListModel = function(items, multiselect) {
 
 };
 
+/* Data loading function superclass (?sub class never remember which way is which) */
 var profile_loader = function(item, multiselect, directory) {
     var self = this;
     self.div_visible = ko.observable(false);
@@ -186,18 +193,43 @@ var profile_loader = function(item, multiselect, directory) {
         });
         socket.emit('load_dat',names, directory);
     };
-    self.set_div_visible = function(visible){
-        self.div_visible(visible);
-    }
 };
+
+/* List of lists of items class */
+var itemListListsModel = function(){
+    var self = this;
+    
+    self.lists = {};
+    self.selectedList = ko.observable(new profile_loader([],true,''));
+    
+    self.select_list = function(listID){
+        self.selectedList(self.lists[listID]);
+    }
+    
+    self.addList = function(listID, items){
+        if (self.lists.hasOwnProperty(listID)) {
+            console.log('list already exists');
+            return
+        };
+        self.lists[listID] = new profile_loader(items,true,listID);
+    };
+    
+    self.updateList = function(listID, items){
+        if (!self.lists.hasOwnProperty(listID)) {
+            self.addList(listID,[]);
+        }
+        self[listID].newItems(items);
+    };
+    
+    self.removeList = function(listID){
+        delete self.lists[listID];
+    };
+};
+
 
 var expDirModel = new itemListModel([], false);
 
-var analysisModel = new profile_loader([], true, 'analysis');
-var manualModel = new profile_loader([], true, 'manual');
-var raw_datModel = new profile_loader([], true, 'raw_dat');
-var avgModel = new profile_loader([], true, 'avg');
-
+var fileListModel = new itemListListsModel();//new profile_loader([], true, 'analysis');
 
 var sendExpDirList = function(){
     var expDirs = []
@@ -270,12 +302,7 @@ $(function() {
     $('#folder_tree')
         // listen for event
         .on('select_node.jstree', function(e, data){ 
-            
-            avgModel.set_div_visible(data.node.id=='avg');
-            analysisModel.set_div_visible(data.node.id=='analysis');
-            manualModel.set_div_visible(data.node.id=='manual');
-            raw_datModel.set_div_visible(data.node.id=='raw_dat');
-            
+            fileListModel.select_list(data.node.id);
         })
         .jstree({ 'core' : {
         'data' : [
@@ -289,9 +316,6 @@ $(function() {
     
     ko.applyBindings(expDirModel, document.getElementById("SelectExperimentsDialog"));
     
-    ko.applyBindings(analysisModel, document.getElementById("analysis"));
-    ko.applyBindings(manualModel, document.getElementById("manual"));
-    ko.applyBindings(raw_datModel, document.getElementById("raw_dat"));
-    ko.applyBindings(avgModel, document.getElementById("avg"));
-    
+    ko.applyBindings(fileListModel, document.getElementById("filelist_div"));
+  
 });
