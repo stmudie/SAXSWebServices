@@ -11,13 +11,22 @@ var positionerStruct = {
     Newport_Rot: 'SR13ID01HU02IOC01:SPARE_3_MTR',
     Chi: 'SR13ID01HU02IOC01:GSAX_CHI_MTR',
     Chi_Speed: 'SR13ID01HU02IOC01:GSAX_CHI_MTR.VELO',
+    N_Points_S1: 'SR13ID01HU02IOC02:scan1.NPTS',
+    Det_Delay_S1: 'SR13ID01HU02IOC02:scan1.DDLY',
+    Int_Tune: 'SR13ID01:DCM_P2_TUNE_AFTER_ENERGY_ENABLE',
+    GI_1_OMG: 'SR13ID01VIOC32:GI_1_OMG',
+    GI_1_X: 'SR13ID01VIOC32:GI_1_X',
+    GI_1_Y: 'SR13ID01VIOC32:GI_1_Y',
+    AXTL: 'SR13ID01VIOC32:GI_1_AXTL',
     None: ''
 };
 var detectorStruct = {
     'WAXSROI1': '13PIL2:Stats1:Total_RBV',
     'WAXSROI2': '13PIL2:Stats2:Total_RBV',
     'WAXSROI3': '13PIL2:Stats3:Total_RBV',
-    'Scaler4': 'SR13ID01HU02IOC02:scaler1.S4'
+    'Scaler5': 'SR13ID01HU02IOC02:scaler1.S5',
+    'Scaler4': 'SR13ID01HU02IOC02:scaler1.S4',
+    'Scaler2': 'SR13ID01HU02IOC02:scaler1.S2'
 };
 var detectorTrigStruct = {
     'Acquire': 'SR13ID01IOC69:Acquire_CMD',
