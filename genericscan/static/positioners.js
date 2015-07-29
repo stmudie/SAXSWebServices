@@ -18,6 +18,10 @@ var positionerStruct = {
     GI_1_X: 'SR13ID01VIOC32:GI_1_X',
     GI_1_Y: 'SR13ID01VIOC32:GI_1_Y',
     AXTL: 'SR13ID01VIOC32:GI_1_AXTL',
+    TransDet: 'SR13ID01HU02IOC01:TR_MIRR_MTR',
+    Slit1HSize: 'SR13ID01SLM01:X_SIZE_SP',
+    Slit4HSize: 'SR13ID01SLM04:X_SIZE_SP',
+    Slit4VSize: 'SR13ID01SLM04:Y_SIZE_SP',
     None: ''
 };
 var detectorStruct = {
@@ -33,8 +37,9 @@ var detectorTrigStruct = {
     'Scan1': 'SR13ID01HU02IOC02:scan1.EXSC',
     'Scan2': 'SR13ID01HU02IOC02:scan2.EXSC',
     'Scan3': 'SR13ID01HU02IOC02:scan3.EXSC',
-    'Scaler': 'SR13ID01HU02IOC02:scaler1.CNT'
-    
+    'Scaler': 'SR13ID01HU02IOC02:scaler1.CNT',
+    'Pil1M_Acquire': '13PIL1:cam1:Acquire',
+    'Pil200k_Acquire': '13PIL1:cam2:Acquire',
 };
 var positionerTestStruct = {
     SampleTableX: 'SMTEST:SMPL_TBL_X_MTR',
