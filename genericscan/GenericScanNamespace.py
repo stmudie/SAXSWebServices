@@ -9,9 +9,9 @@ indexPV = "13INDEXARRAY:array"
 #indexPV = "SMTESTINDEX:array"
 IOCPV = 'SR13ID01HU02IOC02:'
 #IOCPV = 'SMTEST:'
-triggerPV = 'SR13ID01IOC69:Acquire_CMD'
+triggerPV = 'SR13ID01PYSEQ01:Acquire_CMD'
 #triggerPV = 'SMTEST:cam1:Acquire'
-filenamePV = 'SR13ID01IOC69:FileNameCommon'
+filenamePV = 'SR13ID01PYSEQ01:FileNameCommon'
 #filenamePV = 'SMTEST:cam1:FileName'
 
 
