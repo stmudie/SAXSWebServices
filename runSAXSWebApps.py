@@ -20,8 +20,8 @@ from logviewer import LogViewerNamespace
 #from mdaplotter import MDAPlotterNamespace
 #from catcher import catcher_app
 #from catcher import CatcherNamespace
-from catcher2 import catcher2_app
-from catcher2 import Catcher2Namespace
+#from catcher2 import catcher2_app
+#from catcher2 import Catcher2Namespace
 from landingpage import landingpage_app
 from reverse import ReverseProxied
 from plugins import vbl, beamline
