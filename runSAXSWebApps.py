@@ -38,11 +38,8 @@ session_redis = StrictRedis(host=redisIP, port=6379, db=redisdb)
 
 app = Flask(__name__)
 app.config.from_object(config)
-app.config.update(
-    SESSION_REDIS=session_redis,
-    SESSION_TYPE='redis'
-)
-app.session_interface = RedisSessionInterface()
+
+app.session_interface = RedisSessionInterface(session_redis)
 vbl.init_app(app)
 beamline.init_app(app)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
