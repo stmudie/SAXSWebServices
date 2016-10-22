@@ -1,6 +1,7 @@
 from gevent import monkey; monkey.patch_all()
 from socketio import socketio_manage
 from socketio.server import SocketIOServer
+from redis import StrictRedis
 from flask import Flask, request, session
 from wellplates import wellPlate_app
 from wellplates import WellPlateNamespace
@@ -31,9 +32,15 @@ except Exception:
     import config
 from RedisSession import RedisSessionInterface
 
+redisIP,redisdb = config.REDIS['WEBSERVER'].split(':')
+redisdb = int(redisdb)
+session_redis = StrictRedis(host=redisIP, port=6379, db=redisdb)
+
 app = Flask(__name__)
 app.config.from_object(config)
-
+app.config.update(
+    SESSION_REDIS=session_redis
+)
 app.session_interface = RedisSessionInterface()
 vbl.init_app(app)
 beamline.init_app(app)
