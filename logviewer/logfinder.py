@@ -2,7 +2,14 @@ import os
 import redis
 import cPickle as pickle
 import time 
-rw = redis.StrictRedis(host='10.138.11.67', port=6379, db=0)
+try:
+    import localconfig as config
+except Exception:
+    import config
+
+redisIP,redisdb = config.REDIS['WEBSERVER'].split(':')
+redisdb = int(redisdb)
+rw = redis.StrictRedis(host=redisIP, port=6379, db=redisdb)
 
 def find_logfiles():
     for root, dirs, files in os.walk("/data/pilatus1M/"):
