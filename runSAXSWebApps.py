@@ -1,3 +1,4 @@
+from subprocess import Popen
 from gevent import monkey; monkey.patch_all()
 from socketio import socketio_manage
 from socketio.server import SocketIOServer
@@ -31,6 +32,8 @@ try:
 except Exception:
     import config
 from RedisSession import RedisSessionInterface
+
+Popen(['logviewer/logfinder.py'])
 
 redisIP,redisdb = config.REDIS['WEBSERVER'].split(':')
 redisdb = int(redisdb)

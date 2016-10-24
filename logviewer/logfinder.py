@@ -1,7 +1,11 @@
+#!/usr/bin/env python
 import os
+import sys
+sys.path.append(os.getcwd())
 import redis
 import cPickle as pickle
 import time 
+
 try:
     import localconfig as config
 except Exception:
