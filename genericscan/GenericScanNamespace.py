@@ -349,6 +349,7 @@ class GenericScanNamespace(BaseNamespace):
                 elif scantype == 'Table':
                     result += caput(scanPV+'P'+str(1+posNum)+'SM', 1)
                     tableData = [carefulfloat(dataPoint) for dataPoint in (data['tableData'][tableCount])]
+                    print tableData
                     result += caput(scanPV+'P'+str(1+posNum)+'PA', tableData)
                     tableCount += 1
                     
