@@ -26,7 +26,7 @@ from logviewer import LogViewerNamespace
 #from catcher2 import Catcher2Namespace
 from landingpage import landingpage_app
 from reverse import ReverseProxied
-from plugins import vbl, beamline
+#from plugins import vbl, beamline
 try:
     import localconfig as config
 except Exception:
@@ -43,8 +43,8 @@ app = Flask(__name__)
 app.config.from_object(config)
 
 app.session_interface = RedisSessionInterface(session_redis)
-vbl.init_app(app)
-beamline.init_app(app)
+#vbl.init_app(app)
+#beamline.init_app(app)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 app.register_blueprint(wellPlate_app, url_prefix='/wellplates')
@@ -64,14 +64,16 @@ app.register_blueprint(landingpage_app, url_prefix='/static')
 @app.route("/socket.io/<path:path>")
 def run_socketio(path):
     
-    if vbl.current_user != None:
-        user = vbl.current_user['email']
-    else:
-        user = 'Beamline'
+#    if vbl.current_user != None:
+#        user = vbl.current_user['email']
+#    else:
+#        user = 'Beamline'
+#    
+#    print beamline.current
+
+user = 'Beamline'
     
-    print beamline.current
-    
-    attributes = { 'epn': [user], 'REDIS': app.config['REDIS'], 'GENERAL': app.config['GENERAL'], 'beamline': beamline.current}
+    attributes = { 'epn': [user], 'REDIS': app.config['REDIS'], 'GENERAL': app.config['GENERAL'], 'beamline': 'SAXS'}  # beamline.current}
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/mdaplotter':MDAPlotterNamespace}, attributes)
     socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace}, attributes)
     #socketio_manage(request.environ, {'/wellplates': WellPlateNamespace, '/saxsprofiles':SAXSProfilesNamespace, '/secprofiles':SECProfilesNamespace, '/pipelinereport':PipelineReportNamespace, '/genericscan':GenericScanNamespace, '/logviewer':LogViewerNamespace, '/catcher':CatcherNamespace}, attributes)
