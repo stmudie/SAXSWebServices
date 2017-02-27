@@ -399,9 +399,9 @@ class GenericScanNamespace(BaseNamespace):
             self.run(level)
 
     def on_stop(self):
-        caput('%sAbortScans.PROC' % (IOCPV,), [1])
-        caput('%sAbortScans.PROC' % (IOCPV,), [1])
-        caput('%sAbortScans.PROC' % (IOCPV,), [1])
+        caput('%sAbortScans.PROC' % (IOCPV,), 1)
+        caput('%sAbortScans.PROC' % (IOCPV,), 1)
+        caput('%sAbortScans.PROC' % (IOCPV,), 1)
     
 
     def recv_message(self, message):
