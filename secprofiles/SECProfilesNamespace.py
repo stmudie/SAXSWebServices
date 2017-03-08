@@ -20,7 +20,7 @@ class SECProfilesNamespace(BaseNamespace):
         self.epn = ''
         self.exp = ''
         #self.pipeurl = 'https://aswebsaxs.synchrotron.org.au/runpipeline'
-        self.pipeurl = 'http://beamline_protein_rest/runpipeline'
+        self.pipeurl = 'http://beamline_protein_rest:8082/runpipeline'
         
         redisIP,redisdb = self.request['REDIS']['LOG'].split(':')
         if redisIP == 'No Redis':
