@@ -21,6 +21,7 @@
 		<script src="{{ url_for('secprofiles.static', filename='jquery/ui_10/js/jquery-ui-1.10.3.custom.js')}}"></script>
 		
 		<script src="{{ url_for('secprofiles.static', filename='verticalCheckPlugin.js')}}"></script>
+		<script src="{{ url_for('secprofiles.static', filename='FileSaver.min.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='highcharts/highcharts.js')}}"></script>
 		<script src="{{ url_for('secprofiles.static', filename='highcharts/modules/exporting.js')}}"></script>
 
@@ -172,6 +173,8 @@
 			
 WEB_SOCKET_SWF_LOCATION = "{{ url_for('secprofiles.static', filename='WebSocketMain.swf')}}";
 WEB_SOCKET_DEBUG = true;
+
+var last_data = '';
 
 function zip(arrays) {
     return arrays[0].map(function(_,i){
@@ -507,6 +510,7 @@ socket.on('Sample_Load', function(data) {
 });
 
 socket.on('Profile', function(data) {
+	last_data = data.profile;
 	filename = data.filename;
 	if ($('#overplot').is(':checked')) {
 		saxs_profile_chart.addSeries({name: filename, data:data.profile});
@@ -711,6 +715,14 @@ $(function () {
 		$( "#SaveToo" ).button({disabled : false})
 			.click(function(){
 			    savefilename = $("#Name").val()+$("#savesub").html();
+				
+				var data_text = 'q, I, e\r\n';      
+ 				last_data.forEach(function(s){ 
+					data_text += s.toString() + '\r\n';
+ 				});                            
+ 				data = new Blob([data_text]);       
+ 				saveAs(data, savefilename);    
+				
 				range = [LowSelect,HighSelect];
 				socket.emit('SaveAverage',savefilename, range);
 				$("#SaveDialog").dialog("close");
